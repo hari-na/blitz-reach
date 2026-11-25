@@ -72,6 +72,8 @@ def load_company(path: str | Path) -> CompanyFile:
                 kind=spec.get("kind", "money"),
                 source=sources[src_key],
                 note=str(spec.get("note", "") or ""),
+                as_filed=str(spec.get("as_filed", "") or ""),
+                filed_unit=str(spec.get("filed_unit", "") or ""),
             )
         )
 

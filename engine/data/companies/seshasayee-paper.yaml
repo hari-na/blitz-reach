@@ -37,6 +37,8 @@ signals:
     value: 17101700000
     unit: INR
     kind: money
+    as_filed: "1,710.17"
+    filed_unit: crore
     source: mda
     note: "Revenue from operations, Rs 1,710.17 crore, against Rs 1,754.11 crore in FY2025"
 
@@ -44,6 +46,8 @@ signals:
     value: 409300000
     unit: INR
     kind: money
+    as_filed: "40.93"
+    filed_unit: crore
     source: note_19
     note: "Note 19(a), total outstanding dues of micro and small enterprises, Rs 40.93 crore. Closing balance, not an overdue figure"
 
@@ -51,6 +55,8 @@ signals:
     value: 0
     unit: INR
     kind: money
+    as_filed: "0"
+    filed_unit: crore
     source: note_msmed
     note: "Interest accrued and remaining unpaid at the end of each accounting year: Nil"
 
@@ -58,5 +64,7 @@ signals:
     value: 0
     unit: INR
     kind: money
+    as_filed: "0"
+    filed_unit: crore
     source: note_msmed
     note: "Interest due and payable for delay, paid beyond the appointed day: Nil"

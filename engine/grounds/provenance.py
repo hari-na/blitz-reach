@@ -22,6 +22,26 @@ class MissingSignal(LookupError):
     """A hypothesis asked for a signal this company does not have."""
 
 
+class ScaleError(ValueError):
+    """A figure's stated scale does not reconcile with the value recorded."""
+
+
+# Indian annual reports are denominated in lakhs, crores or millions, and the
+# choice is made per statement, not per document. A survey of ten FY2025-26
+# reports found the scale declared on the note's own page in only six, declared
+# nowhere nearby in three, and in The India Cements Limited the note is in lakhs
+# while the document's own first declaration says crore. Taking the scale from
+# the wrong place is a hundredfold error, which is the single most dangerous
+# mistake available in this whole pipeline.
+UNIT_MULTIPLIERS: dict[str, float] = {
+    "unit": 1.0,
+    "thousand": 1_000.0,
+    "lakh": 100_000.0,
+    "million": 1_000_000.0,
+    "crore": 10_000_000.0,
+}
+
+
 @dataclass(frozen=True)
 class Source:
     """A document the reader can open and check."""
@@ -55,6 +75,11 @@ class Signal:
     kind: SignalKind
     source: Source
     note: str = ""
+    # How the figure is printed in the filing, and the scale it is printed on.
+    # When both are given the conversion is checked, so a scale error cannot be
+    # typed into a capture without the loader rejecting it.
+    as_filed: str = ""
+    filed_unit: str = ""
 
     def __post_init__(self) -> None:
         if not self.key.strip():
@@ -68,6 +93,42 @@ class Signal:
         ):
             raise ProvenanceError(
                 f"Signal {self.key!r} is kind={self.kind} but value is not numeric."
+            )
+        self._check_scale()
+
+    def _check_scale(self) -> None:
+        if not self.as_filed and not self.filed_unit:
+            return
+        if not (self.as_filed and self.filed_unit):
+            raise ProvenanceError(
+                f"Signal {self.key!r} gives only one of as_filed / filed_unit. "
+                "A figure's printed form and its scale are one fact; record both or "
+                "neither."
+            )
+
+        unit = self.filed_unit.strip().lower().rstrip("s")
+        if unit not in UNIT_MULTIPLIERS:
+            raise ScaleError(
+                f"Signal {self.key!r} has filed_unit {self.filed_unit!r}. "
+                f"Known scales: {sorted(UNIT_MULTIPLIERS)}."
+            )
+
+        try:
+            printed = float(self.as_filed.replace(",", "").strip())
+        except ValueError as exc:
+            raise ProvenanceError(
+                f"Signal {self.key!r} as_filed {self.as_filed!r} is not a number."
+            ) from exc
+
+        expected = printed * UNIT_MULTIPLIERS[unit]
+        # Tolerate rounding in the last printed digit, nothing more. A scale
+        # mistake is off by at least a factor of ten and can never pass this.
+        if abs(float(self.value) - expected) > max(abs(expected) * 1e-6, 1.0):
+            raise ScaleError(
+                f"Signal {self.key!r} does not reconcile: {self.as_filed} "
+                f"{self.filed_unit} is {expected:,.0f}, but {float(self.value):,.0f} "
+                "was recorded. Check the scale declared on the page the figure "
+                "came from, not the one at the front of the document."
             )
 
     @property

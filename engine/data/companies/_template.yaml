@@ -6,6 +6,14 @@
 #   mixed        some of each
 #   synthetic    invented, describes no real company (prints a warning on the brief)
 #
+# ALWAYS record as_filed and filed_unit on a money figure: the number exactly as
+# printed, and the scale printed beside it (lakh, crore, million, unit). The
+# loader multiplies them out and refuses the capture if the result disagrees with
+# `value`. This exists because The India Cements Limited prints its MSMED note in
+# lakhs while the first scale declared in the document says crore, and a survey
+# of ten reports found the scale stated on the note's own page only 6 times in 9.
+# Taking it from the wrong page is a hundredfold error.
+#
 # Every signal must name a source key defined above it. A signal pointing at an
 # undefined source raises, and a source without a locator raises. That is the
 # point: a figure a reader cannot go and check does not belong in a brief.
@@ -46,19 +54,38 @@ signals:
     source: ar_pl
     note: Revenue from operations
 
-  # H01. Principal unpaid to micro and small enterprises beyond the appointed day.
-  - key: mse_principal_outstanding
+  # H01 driver. Interest exists only where payment went past the appointed day,
+  # so this line is the company's own admission of late payment. Nil is common
+  # (5 of 9 surveyed) and means H01 correctly stays silent. Capture the nil as 0
+  # rather than omitting it: a filed zero is a tested-and-clear result, an
+  # absent signal is an unfinished capture, and the brief reports them
+  # differently.
+  - key: mse_interest_accrued_unpaid
     value: 0
     unit: INR
     kind: money
+    as_filed: "0"
+    filed_unit: crore
     source: ar_mse
 
-  # H01, optional. If the company disclosed accrued interest, that filed figure
-  # is used instead of our derived one and confidence goes to high.
-  # - key: mse_interest_accrued_unpaid
+  # H01 driver. Interest the company actually paid out on late payments.
+  # - key: mse_interest_paid_during_year
   #   value: 0
   #   unit: INR
   #   kind: money
+  #   as_filed: "0"
+  #   filed_unit: crore
+  #   source: ar_mse
+
+  # Context only, never sizing. Section 22 asks for the balance at year end,
+  # which includes invoices not yet due, so a large figure here proves only that
+  # the company buys from small suppliers.
+  # - key: mse_principal_outstanding
+  #   value: 0
+  #   unit: INR
+  #   kind: money
+  #   as_filed: "0"
+  #   filed_unit: crore
   #   source: ar_mse
 
   # H04. The strongest single signal. Auditor reported, so confidence is high.

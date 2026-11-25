@@ -160,6 +160,47 @@ No revenue figure means `abstain` before any hypothesis runs. Without a
 denominator nothing can be tested for materiality, and sizing a problem without
 one is the error this engine exists to avoid.
 
+## What ten reports say about these assumptions
+
+Surveyed with `python -I tools/survey.py data/filings` over ten FY2025-26
+reports. Full write-up in `../research/03-filing-survey.md`.
+
+| | |
+|---|---|
+| MSMED note located by one regex | **9 of 9** readable |
+| Interest line parsed | **9 of 9** |
+| Interest is nil, so H01 stays silent | **5 of 9** |
+| Scale declared on the note's own page | **6 of 9** |
+| CARO six-month clause says none, so H04 cannot fire | **7 of 8** |
+| Reports unreadable at all | **1 of 10** |
+
+Four things came out of that, and two of them changed the code.
+
+**The wording is boilerplate, so extraction is automatable.** One regex worked
+every time. That is the finding the whole approach depends on.
+
+**Units are the real hazard.** India Cements prints its MSMED note in lakhs while
+the first scale declared in the document says crore, and the rupee sign extracts
+as a different character per report depending on the embedded font: a backtick
+in India Cements, `C` and `D` in LMW. A money figure now records `as_filed` and
+`filed_unit`, the figure as printed and the scale beside it, and the loader
+multiplies them out and **refuses the capture if it disagrees with the value**.
+All eighteen figures in the three real captures reconcile, and a test reproduces
+the India Cements trap and asserts it cannot be built.
+
+**One report in ten cannot be read.** Dalmia Bharat publishes a PDF Portfolio,
+a container holding the real document as an attachment, which every extractor
+sees as one page saying "open this in Acrobat." The survey reports it as a
+failure rather than skipping it.
+
+**The hypothesis ranking was backwards.** H04 was designed as the strongest
+signal because the auditor reports it directly, and in practice 7 of 8 auditors
+say there is nothing to report, so it almost never fires. It still earns its
+place: a filed zero is what makes an abstain mean "read and clean" instead of
+"nobody looked." But H03, disputed GST demands, is the hypothesis that actually
+finds anybody, and H01 is selective. Of ten large listed companies, **none**
+would be approached on late payment to small suppliers alone.
+
 ## What it reads
 
 Indian statutory filings, because they carry a signal US disclosure does not:

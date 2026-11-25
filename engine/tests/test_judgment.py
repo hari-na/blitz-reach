@@ -18,6 +18,7 @@ from grounds.compose import check_no_new_numbers, compose  # noqa: E402
 from grounds.loader import load_company  # noqa: E402
 from grounds.provenance import (  # noqa: E402
     ProvenanceError,
+    ScaleError,
     Signal,
     SignalSet,
     Source,
@@ -60,6 +61,75 @@ def test_signal_cannot_exist_without_a_citation() -> None:
         pass
     else:
         raise AssertionError("a Source with no locator was constructed")
+
+
+def test_a_scale_error_cannot_be_captured() -> None:
+    """The India Cements trap, made impossible.
+
+    Its MSMED note is denominated in lakhs while the first scale declared in the
+    document says crore. A survey of ten FY2025-26 reports found the scale
+    stated on the note's own page in only six of nine readable ones, so anyone
+    automating this will be tempted to take it from the document. That is a
+    hundredfold error. Recording the printed figure and its scale makes the
+    conversion checkable, and a mismatch raises instead of screening.
+    """
+    # 123.34 lakhs is the real figure: Rs 12,334,000.
+    ok = Signal(
+        key="mse_interest_accrued_unpaid",
+        value=12_334_000,
+        unit="INR",
+        kind="money",
+        source=GOOD_SOURCE,
+        as_filed="123.34",
+        filed_unit="lakh",
+    )
+    assert ok.num == 12_334_000
+
+    # The same value labelled crore is the mistake. It must not be constructible.
+    try:
+        Signal(
+            key="mse_interest_accrued_unpaid",
+            value=12_334_000,
+            unit="INR",
+            kind="money",
+            source=GOOD_SOURCE,
+            as_filed="123.34",
+            filed_unit="crore",
+        )
+    except ScaleError as exc:
+        assert "does not reconcile" in str(exc), str(exc)
+    else:
+        raise AssertionError("a hundredfold scale error was accepted")
+
+    # Half a provenance record is not a provenance record.
+    try:
+        Signal(
+            key="revenue",
+            value=1.0,
+            unit="INR",
+            kind="money",
+            source=GOOD_SOURCE,
+            as_filed="123.34",
+        )
+    except ProvenanceError:
+        pass
+    else:
+        raise AssertionError("as_filed without filed_unit was accepted")
+
+
+def test_every_real_capture_reconciles_to_its_printed_figure() -> None:
+    """Not a unit test. A standing audit of the three hand captures."""
+    for name in ("india-cements.yaml", "lmw.yaml", "seshasayee-paper.yaml"):
+        cf = load_company(FIXTURES / name)
+        checked = 0
+        for key in cf.signals.keys():
+            sig = cf.signals.get(key)
+            assert sig is not None
+            if sig.as_filed:
+                checked += 1  # construction already verified the arithmetic
+        assert checked >= 4, "{n} records only {c} checkable figures".format(
+            n=name, c=checked
+        )
 
 
 def test_immaterial_findings_do_not_produce_a_brief() -> None:

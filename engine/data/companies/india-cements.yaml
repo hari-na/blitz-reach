@@ -37,6 +37,8 @@ signals:
     value: 44846900000
     unit: INR
     kind: money
+    as_filed: "4,484.69"
+    filed_unit: crore
     source: dr_results
     note: "Revenue from operations, standalone, Rs 4,484.69 crore"
 
@@ -44,6 +46,8 @@ signals:
     value: 119585000
     unit: INR
     kind: money
+    as_filed: "1,195.85"
+    filed_unit: lakh
     source: note_37_3
     note: "Note 37.3(a), Rs 1,195.85 lakhs. Closing balance, includes amounts not yet due"
 
@@ -51,6 +55,8 @@ signals:
     value: 12334000
     unit: INR
     kind: money
+    as_filed: "123.34"
+    filed_unit: lakh
     source: note_37_3
     note: "Note 37.3(e), interest accrued and remaining unpaid, Rs 123.34 lakhs"
 
@@ -58,6 +64,8 @@ signals:
     value: 14112000
     unit: INR
     kind: money
+    as_filed: "141.12"
+    filed_unit: lakh
     source: note_37_3
     note: "Note 37.3(c), interest actually paid on payments made beyond the due date, Rs 141.12 lakhs"
 
@@ -68,6 +76,8 @@ signals:
     value: 0
     unit: INR
     kind: money
+    as_filed: "0"
+    filed_unit: lakh
     source: caro_vii_a
     note: "Auditor: no undisputed statutory dues in arrears over six months at 31-03-2026"
 
@@ -75,6 +85,8 @@ signals:
     value: 1904811038
     unit: INR
     kind: money
+    as_filed: "1904811038"
+    filed_unit: unit
     source: caro_annexure_i
     note: "GST sub-total, Rs 190,48,11,038, periods 2017-18 to 2022-23"
 
@@ -82,5 +94,7 @@ signals:
     value: 9302553773
     unit: INR
     kind: money
+    as_filed: "9302553773"
+    filed_unit: unit
     source: caro_annexure_i
     note: "Grand total of all disputed dues, Rs 930.26 crore. Mostly pre-GST excise, customs and sales tax from 1995-96 onward, plus Rs 438.62 crore of electricity, stamp duty and mining cases"
