@@ -16,7 +16,7 @@ produces a confident paragraph. That is why nothing lands. This one is built to
 read a thousand and refuse most of them, so the ones it does not refuse are
 worth an hour of someone's time.
 
-On the seven companies shipped here it refuses five.
+On the seven companies shipped here it refuses six, including all three real ones.
 
 ## What it says about three real companies
 
@@ -25,9 +25,25 @@ cited to a page.
 
 | Company | Verdict | Why |
 |---|---|---|
-| The India Cements Limited | **actionable** | Rs 190.48 cr of GST demands under appeal, Rs 34.29 cr of annual interest exposure, 0.765% of revenue |
+| The India Cements Limited | **abstain** | Rs 34.29 cr of GST interest exposure, 0.765% of revenue, real and material. And Crisil tagged the company Issuer Not Cooperating and withdrew its ratings, so the finding is left on the table |
 | LMW Limited | **abstain** | every interest line in its MSMED note is nil. Audited proof it pays small suppliers on time |
 | Seshasayee Paper and Boards | **abstain** | nil MSMED interest, and the capture was never finished. The brief says which figures are missing |
+
+All three refused, for three different documented reasons. That is the result
+worth showing: anything can be built to find a problem everywhere it looks.
+
+### A second source that only subtracts
+
+Credit rating rationales were added as an independent signal family. Read in
+full, Crisil's March 2026 rationale for Ramco Cements (AA+/Stable, 29,859
+characters) mentions creditors, trade payables and the working capital cycle
+**nowhere**, and nor does its March 2023 rationale for India Cements. Analysts
+write about payables only once payables are the problem, so a rating document
+cannot be where you discover one.
+
+What it reliably carries is whether the company can act on a finding at all. So
+`grounds/qualifiers.py` never produces a finding, only a veto, and the brief
+prints what was found beside the reason for not calling.
 
 **Reading real filings corrected two real errors**, which is the entire reason
 to do it rather than reason from fixtures.

@@ -43,15 +43,23 @@ s.22, so companies reproduce the six prescribed items nearly verbatim. Automated
 extraction of this signal is viable, which is the single most important thing the
 survey establishes.
 
-## 2. One report in ten is not readable at all. New.
+## 2. One report in ten needs unwrapping, not OCR. Fixed.
 
 Dalmia Bharat publishes as a **PDF Portfolio**, a container holding the real
 document as an embedded attachment. Every text extractor sees one page saying
 "open this PDF portfolio in Acrobat." It is not scanned and not corrupt; it is a
 format the tooling cannot reach.
 
-A 10% hard-failure rate has to be reported as a failure, not silently skipped,
-or a screening run quietly drops companies and nobody knows which.
+OCR is the wrong instinct here and would have been wasted work. Nothing is
+scanned; the text is perfectly intact one level down. `tools/unwrap.py` reads the
+attachments and writes out the largest PDF, which recovered a 249-page readable
+report. The survey is now 10 of 10 on a readable document.
+
+Genuinely scanned reports will turn up eventually and will need OCR. Tesseract is
+not installed here, so that is unbuilt and untested rather than assumed to work.
+
+Either way a failure has to be reported as a failure, because a screening run
+that silently drops companies is worse than one that stops.
 
 ## 3. Units are the dangerous part, and they are often not next to the number.
 
@@ -128,3 +136,51 @@ guess, which is the same argument the materiality floor makes.
 
 And the hypothesis portfolio needs rebalancing on evidence rather than on how
 compelling each one sounded when written.
+
+
+---
+
+## 7. A second signal source was added, and it cannot find anything
+
+Added after the first survey, because one document family is one point of view.
+The candidate was credit rating rationales: free, public, short, and written by
+an analyst rather than by the company about itself.
+
+Two were read in full.
+
+- **Ramco Cements, Crisil, March 2026, AA+/Stable.** 29,859 characters, read end
+  to end. Mentions creditors, trade payables, creditor days and the working
+  capital cycle **nowhere**. The only working-capital sentence is that bank lines
+  are expected to meet incremental requirements.
+- **The India Cements, Crisil, March 2023.** Also mentions creditors, payables
+  and liquidity nowhere.
+
+So the hypothesis that rating documents would yield payables findings is dead.
+Analysts write about payables once payables are already the problem, which means
+a rating document cannot be where you discover one.
+
+**What it does carry is whether the company can act at all**, and that turned out
+to matter more. The India Cements rationale revised the company to BB/Stable
+**Issuer Not Cooperating**, then withdrew its ratings at the company's own
+request, after Crisil followed up by letter on 3 January, 3 February, 17 February
+and 23 February 2023 and received nothing.
+
+The engine sizes a real Rs 34.29 crore GST interest exposure at that company,
+0.765% of revenue, comfortably past the lead floor. And an organisation that
+stops answering its own rating agency will not answer an outbound approach about
+its accounts payable. The approach is wasted either way.
+
+**So the second vector is a qualifier, not a finder.** `grounds/qualifiers.py`
+never creates a finding; it only vetoes one, and the brief prints what was found
+next to the reason for leaving it. India Cements flips from actionable to
+abstain, which takes the engine to **all three real companies refused**, for
+three different documented reasons:
+
+| Company | Refused because |
+|---|---|
+| LMW | nil MSMED interest on every line. Audited proof it pays on time |
+| Seshasayee | nil interest, and the capture was never finished. The brief says which figures are missing |
+| India Cements | a real material finding at a company that stopped answering its own rating agency |
+
+That is a better result than one hit. Anyone can build something that finds a
+problem everywhere it looks.

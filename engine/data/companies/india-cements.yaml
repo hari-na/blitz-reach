@@ -32,6 +32,13 @@ sources:
     year: FY2026
     locator: "Annexure (i) to the Auditors' Report, para 3(vii)(b) of CARO 2020, page 109 (PDF page 112)"
 
+  crisil_2023:
+    doc_type: credit_rating
+    title: Crisil Ratings rationale, The India Cements Limited
+    year: "2023"
+    locator: "Rating action and Non cooperation by Issuer, 20 March 2023"
+    url: "https://crisil.com/mnt/winshare/Ratings/RatingList/RatingDocs/TheIndiaCementsLimited_March%2020,%202023_RR_312753.html"
+
 signals:
   - key: revenue
     value: 44846900000
@@ -98,3 +105,29 @@ signals:
     filed_unit: unit
     source: caro_annexure_i
     note: "Grand total of all disputed dues, Rs 930.26 crore. Mostly pre-GST excise, customs and sales tax from 1995-96 onward, plus Rs 438.62 crore of electricity, stamp duty and mining cases"
+
+  # Second source, and it finds nothing. Read in full, this rationale mentions
+  # creditors, trade payables and liquidity nowhere, and neither does Crisil's
+  # March 2026 rationale for Ramco Cements. Analysts write about payables only
+  # once payables are the problem, so a rating document cannot discover one.
+  # What it establishes is whether the company can act on a finding at all.
+  - key: credit_rating_grade
+    value: "BB"
+    unit: grade
+    kind: text
+    source: crisil_2023
+    note: "Long term revised to Crisil BB/Stable (Issuer Not Cooperating) from BBB/Negative, then withdrawn. No public rating since"
+
+  - key: issuer_not_cooperating
+    value: 1
+    unit: flag
+    kind: count
+    source: crisil_2023
+    note: "Crisil followed up by letter on 3 Jan, 3 Feb, 17 Feb and 23 Feb 2023 and received no response"
+
+  - key: rating_withdrawn
+    value: 1
+    unit: flag
+    kind: count
+    source: crisil_2023
+    note: "Withdrawn at the request of the company on receipt of no-dues certificates from its banks"

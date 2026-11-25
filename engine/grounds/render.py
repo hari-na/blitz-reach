@@ -89,6 +89,28 @@ def render(assessment: Assessment, prose: str = "") -> str:
     lines.append("---")
     lines.append("")
 
+    if a.vetoes:
+        lines += [
+            "## Why we are not calling anyway",
+            "",
+            "A finding is only worth an approach if the company can act on it. These "
+            "come from a second source that never produces a finding of its own, only "
+            "reasons not to use one.",
+            "",
+        ]
+        for veto in a.vetoes:
+            lines += [
+                "**`{qid}`**  {reason}".format(qid=veto.qualifier_id, reason=veto.reason),
+                "",
+                "- {cite}".format(cite=veto.citation),
+                "",
+            ]
+        if a.supporting:
+            lines += [
+                "What was found, and is being left on the table:",
+                "",
+            ]
+
     if a.lead is not None:
         lines += _finding_block(a.lead, a.share(a.lead), "Lead")
 

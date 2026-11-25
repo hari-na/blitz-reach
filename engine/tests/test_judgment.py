@@ -220,16 +220,48 @@ def test_disputed_dues_are_sized_on_the_gst_slice_only() -> None:
     GST slice, Rs 190.48 crore, and the test fails if anyone widens it back.
     """
     a = _assess("india-cements.yaml")
-    assert a.verdict == "actionable", a.verdict
-    assert a.lead is not None and a.lead.hypothesis_id == "H03", a.lead
+    found = {f.hypothesis_id: f for f in a.material}
+    assert "H03" in found, list(found)
+    h03 = found["H03"]
 
     gst_slice = 1_904_811_038
     expected = gst_slice * 0.18
-    assert abs(a.lead.magnitude - expected) < 1.0, a.lead.magnitude
+    assert abs(h03.magnitude - expected) < 1.0, h03.magnitude
     # Sized off the grand total this would be more than four times larger.
-    assert a.lead.magnitude < 9_302_553_773 * 0.18 / 4, a.lead.magnitude
+    assert h03.magnitude < 9_302_553_773 * 0.18 / 4, h03.magnitude
     # And the brief has to admit what it left out.
-    assert "pre-GST" in a.lead.mechanism, a.lead.mechanism
+    assert "pre-GST" in h03.mechanism, h03.mechanism
+    assert a.share(h03) >= 0.005, a.share(h03)
+
+
+def test_a_real_finding_is_vetoed_when_the_company_cannot_act() -> None:
+    """India Cements is the case that justifies a second signal source.
+
+    H03 fires on filed evidence at 0.765% of revenue, well past the lead floor.
+    And Crisil revised the company to BB/Stable Issuer Not Cooperating in March
+    2023, then withdrew its ratings at the company's own request, after chasing
+    it by letter on four dates and receiving nothing. A company that stops
+    answering its own rating agency will not answer an outbound approach about
+    its accounts payable, so the approach is wasted either way.
+
+    The verdict must flip to abstain, the finding must stay visible so a reader
+    sees both halves, and the reason must cite the rating document.
+    """
+    a = _assess("india-cements.yaml")
+    assert a.verdict == "abstain", a.verdict
+    assert a.lead is None, a.lead
+    assert a.material, "the finding must still be reported"
+    assert len(a.vetoes) == 3, [v.qualifier_id for v in a.vetoes]
+    assert {v.qualifier_id for v in a.vetoes} == {"Q01", "Q02", "Q03"}
+    assert all("crisil" in v.citation.lower() for v in a.vetoes), a.vetoes
+    assert "should still not be approached" in a.reason, a.reason
+
+
+def test_a_qualifier_never_invents_a_finding() -> None:
+    """Qualifiers only subtract. A company with no rating data is unaffected."""
+    for name in ("lmw.yaml", "seshasayee-paper.yaml"):
+        a = _assess(name)
+        assert a.vetoes == (), (name, a.vetoes)
 
 
 def test_real_interest_that_was_actually_paid_is_still_immaterial() -> None:

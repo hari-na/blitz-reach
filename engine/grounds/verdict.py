@@ -26,6 +26,7 @@ from grounds.materiality import (
     share_of_revenue,
 )
 from grounds.provenance import SignalSet
+from grounds.qualifiers import Veto, run_qualifiers
 
 Verdict = Literal["actionable", "thin", "abstain"]
 
@@ -56,6 +57,9 @@ class Assessment:
     # were read and are clean; an abstain backed only by `skipped` means nobody
     # finished the capture. Conflating the two would be the worst bug in here.
     cleared: tuple[tuple[str, str], ...] = ()
+    # Reasons not to approach this company whatever was found. A qualifier
+    # never creates a finding; it only stops one being acted on.
+    vetoes: tuple[Veto, ...] = ()
 
     @property
     def material(self) -> tuple[Finding, ...]:
@@ -107,6 +111,7 @@ def assess(
         )
 
     revenue = revenue_sig.num
+    vetoes = run_qualifiers(signals)
 
     findings: list[Finding] = []
     skipped: list[Skipped] = []
@@ -181,6 +186,7 @@ def assess(
             slug=slug,
             signals_present=tuple(signals.keys()),
             cleared=tuple(cleared),
+            vetoes=vetoes,
         )
 
     lead = next(
@@ -191,6 +197,35 @@ def assess(
         ),
         None,
     )
+
+    if lead is not None and vetoes:
+        # Something real was found and the company still should not be called.
+        # The findings stay on the page so the reader sees both halves.
+        reason = (
+            "{title} is filed and material at {share} of revenue, and this company "
+            "should still not be approached: {why}"
+        ).format(
+            title=lead.title,
+            share=pct(share_of_revenue(lead.magnitude, revenue)),
+            why=vetoes[0].reason[0].lower() + vetoes[0].reason[1:],
+        )
+        return Assessment(
+            company=company,
+            fiscal_year=fiscal_year,
+            capture=capture,
+            verdict="abstain",
+            reason=reason,
+            revenue=revenue,
+            lead=None,
+            supporting=tuple(material),
+            discarded=tuple(discarded),
+            skipped=tuple(skipped),
+            signal_count=len(signals),
+            slug=slug,
+            signals_present=tuple(signals.keys()),
+            cleared=tuple(cleared),
+            vetoes=vetoes,
+        )
 
     if lead is None:
         reason = (
@@ -228,4 +263,5 @@ def assess(
         slug=slug,
         signals_present=tuple(signals.keys()),
         cleared=tuple(cleared),
+        vetoes=vetoes,
     )
