@@ -1,0 +1,100 @@
+company: Kaveri Cements Ltd (fixture)
+fiscal_year: FY2025
+capture: synthetic
+
+sources:
+  ar_mse:
+    doc_type: annual_report
+    title: Kaveri Cements Ltd Annual Report 2024-25 (fixture)
+    year: FY2025
+    locator: "Note 36, Dues to micro and small enterprises, page 184"
+  ar_bs:
+    doc_type: annual_report
+    title: Kaveri Cements Ltd Annual Report 2024-25 (fixture)
+    year: FY2025
+    locator: "Balance sheet and Note 22, Trade payables, page 151"
+  ar_pl:
+    doc_type: annual_report
+    title: Kaveri Cements Ltd Annual Report 2024-25 (fixture)
+    year: FY2025
+    locator: "Statement of profit and loss, page 148"
+  caro:
+    doc_type: caro
+    title: Kaveri Cements Ltd Independent Auditor's Report 2024-25 (fixture)
+    year: FY2025
+    locator: "Annexure A, CARO 2020 clause vii(a), page 141"
+  contingent:
+    doc_type: annual_report
+    title: Kaveri Cements Ltd Annual Report 2024-25 (fixture)
+    year: FY2025
+    locator: "Note 41, Contingent liabilities, statutory matters, page 196"
+  sector:
+    doc_type: sector_benchmark
+    title: Cement sector payable-days median, listed Indian manufacturers (fixture)
+    year: FY2025
+    locator: "Computed from 14 listed peers"
+  hiring:
+    doc_type: job_posting
+    title: Kaveri Cements careers listings, finance function (fixture)
+    year: FY2025
+    locator: "Captured 2026-11-26, roles naming AP, reconciliation or invoice processing"
+
+signals:
+  - key: revenue
+    value: 42000000000
+    unit: INR
+    kind: money
+    source: ar_pl
+    note: Revenue from operations
+
+  - key: purchases
+    value: 26000000000
+    unit: INR
+    kind: money
+    source: ar_pl
+    note: Cost of materials consumed plus purchases of stock-in-trade
+
+  - key: trade_payables
+    value: 8900000000
+    unit: INR
+    kind: money
+    source: ar_bs
+
+  - key: sector_payable_days_median
+    value: 75
+    unit: days
+    kind: days
+    source: sector
+
+  - key: mse_principal_overdue
+    value: 3100000000
+    unit: INR
+    kind: money
+    source: ar_mse
+    note: Principal remaining unpaid to micro and small enterprises beyond the appointed day
+
+  - key: mse_interest_accrued
+    value: 475000000
+    unit: INR
+    kind: money
+    source: ar_mse
+    note: Interest accrued and remaining unpaid under MSMED s.16
+
+  - key: undisputed_statutory_dues_over_6m
+    value: 1420000000
+    unit: INR
+    kind: money
+    source: caro
+    note: Undisputed statutory dues outstanding more than six months, auditor reported
+
+  - key: disputed_statutory_dues
+    value: 880000000
+    unit: INR
+    kind: money
+    source: contingent
+
+  - key: finance_recon_openings
+    value: 6
+    unit: roles
+    kind: count
+    source: hiring

@@ -1,0 +1,82 @@
+company: Nilgiri Textiles Ltd (fixture)
+fiscal_year: FY2025
+capture: synthetic
+
+# The quicklime case, reproduced. Two hypotheses fire on real filed numbers and
+# both are immaterial. The engine must refuse this company. If it does not, the
+# materiality floor is not doing its job.
+
+sources:
+  ar_mse:
+    doc_type: annual_report
+    title: Nilgiri Textiles Ltd Annual Report 2024-25 (fixture)
+    year: FY2025
+    locator: "Note 29, Dues to micro and small enterprises, page 118"
+  ar_bs:
+    doc_type: annual_report
+    title: Nilgiri Textiles Ltd Annual Report 2024-25 (fixture)
+    year: FY2025
+    locator: "Note 18, Trade payables, page 104"
+  ar_pl:
+    doc_type: annual_report
+    title: Nilgiri Textiles Ltd Annual Report 2024-25 (fixture)
+    year: FY2025
+    locator: "Statement of profit and loss, page 101"
+  contingent:
+    doc_type: annual_report
+    title: Nilgiri Textiles Ltd Annual Report 2024-25 (fixture)
+    year: FY2025
+    locator: "Note 33, Contingent liabilities, page 129"
+  sector:
+    doc_type: sector_benchmark
+    title: Textile sector payable-days median, listed Indian manufacturers (fixture)
+    year: FY2025
+    locator: "Computed from 21 listed peers"
+  hiring:
+    doc_type: job_posting
+    title: Nilgiri Textiles careers listings, finance function (fixture)
+    year: FY2025
+    locator: "Captured 2026-11-26"
+
+signals:
+  - key: revenue
+    value: 21000000000
+    unit: INR
+    kind: money
+    source: ar_pl
+
+  - key: purchases
+    value: 12400000000
+    unit: INR
+    kind: money
+    source: ar_pl
+
+  - key: trade_payables
+    value: 1680000000
+    unit: INR
+    kind: money
+    source: ar_bs
+
+  - key: sector_payable_days_median
+    value: 52
+    unit: days
+    kind: days
+    source: sector
+
+  - key: mse_principal_overdue
+    value: 12000000
+    unit: INR
+    kind: money
+    source: ar_mse
+
+  - key: disputed_statutory_dues
+    value: 64000000
+    unit: INR
+    kind: money
+    source: contingent
+
+  - key: finance_recon_openings
+    value: 1
+    unit: roles
+    kind: count
+    source: hiring

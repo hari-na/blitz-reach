@@ -1,0 +1,44 @@
+company: Palani Sugars Ltd (fixture)
+fiscal_year: FY2025
+capture: synthetic
+
+# Only the deliberately weak hypothesis clears the materiality floor. It is
+# capped at low confidence and may never lead, so the verdict must come out
+# thin rather than actionable. This is the case that catches an engine which
+# promotes a weak signal because nothing better was available.
+
+sources:
+  ar_pl:
+    doc_type: annual_report
+    title: Palani Sugars Ltd Annual Report 2024-25 (fixture)
+    year: FY2025
+    locator: "Statement of profit and loss, page 88"
+  contingent:
+    doc_type: annual_report
+    title: Palani Sugars Ltd Annual Report 2024-25 (fixture)
+    year: FY2025
+    locator: "Note 31, Contingent liabilities, page 112"
+  hiring:
+    doc_type: job_posting
+    title: Palani Sugars careers listings, finance function (fixture)
+    year: FY2025
+    locator: "Captured 2026-11-26, 11 roles naming AP or reconciliation"
+
+signals:
+  - key: revenue
+    value: 7600000000
+    unit: INR
+    kind: money
+    source: ar_pl
+
+  - key: disputed_statutory_dues
+    value: 140000000
+    unit: INR
+    kind: money
+    source: contingent
+
+  - key: finance_recon_openings
+    value: 11
+    unit: roles
+    kind: count
+    source: hiring

@@ -1,0 +1,100 @@
+# Template for a real capture. Copy, rename, fill in, delete this comment block.
+#
+# capture: must be one of
+#   parsed       read programmatically from the source document
+#   hand_seeded  typed in by a person from the cited filing
+#   mixed        some of each
+#   synthetic    invented, describes no real company (prints a warning on the brief)
+#
+# Every signal must name a source key defined above it. A signal pointing at an
+# undefined source raises, and a source without a locator raises. That is the
+# point: a figure a reader cannot go and check does not belong in a brief.
+#
+# Files beginning with an underscore are still picked up by `screen`, so move
+# this out of the directory or leave it as is and expect an abstain row.
+
+company: Example Industries Ltd
+fiscal_year: FY2025
+capture: hand_seeded
+
+sources:
+  ar_pl:
+    doc_type: annual_report
+    title: Example Industries Ltd Annual Report 2024-25
+    year: FY2025
+    locator: "Statement of profit and loss, page NN"
+    url: ""
+  ar_mse:
+    doc_type: annual_report
+    title: Example Industries Ltd Annual Report 2024-25
+    year: FY2025
+    locator: "Note NN, Dues to micro and small enterprises, page NN"
+    url: ""
+  caro:
+    doc_type: caro
+    title: Example Industries Ltd Independent Auditor's Report 2024-25
+    year: FY2025
+    locator: "Annexure A, CARO 2020 clause vii(a), page NN"
+    url: ""
+
+signals:
+  # Required. Without it the engine abstains before anything runs.
+  - key: revenue
+    value: 0
+    unit: INR
+    kind: money
+    source: ar_pl
+    note: Revenue from operations
+
+  # H01. Principal unpaid to micro and small enterprises beyond the appointed day.
+  - key: mse_principal_overdue
+    value: 0
+    unit: INR
+    kind: money
+    source: ar_mse
+
+  # H01, optional. If the company disclosed accrued interest, that filed figure
+  # is used instead of our derived one and confidence goes to high.
+  # - key: mse_interest_accrued
+  #   value: 0
+  #   unit: INR
+  #   kind: money
+  #   source: ar_mse
+
+  # H04. The strongest single signal. Auditor reported, so confidence is high.
+  # - key: undisputed_statutory_dues_over_6m
+  #   value: 0
+  #   unit: INR
+  #   kind: money
+  #   source: caro
+
+  # H03. From the contingent liabilities note.
+  # - key: disputed_statutory_dues
+  #   value: 0
+  #   unit: INR
+  #   kind: money
+  #   source: ar_pl
+
+  # H02 needs all three of these together.
+  # - key: purchases
+  #   value: 0
+  #   unit: INR
+  #   kind: money
+  #   source: ar_pl
+  # - key: trade_payables
+  #   value: 0
+  #   unit: INR
+  #   kind: money
+  #   source: ar_pl
+  # - key: sector_payable_days_median
+  #   value: 0
+  #   unit: days
+  #   kind: days
+  #   source: ar_pl
+
+  # H05. Weak by construction, capped at low confidence, can never lead.
+  # - key: finance_recon_openings
+  #   value: 0
+  #   unit: roles
+  #   kind: count
+  #   source: ar_pl

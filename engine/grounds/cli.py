@@ -1,0 +1,112 @@
+"""Command line entry point.
+
+    python -m grounds.cli screen data/companies
+    python -m grounds.cli brief data/companies/example.yaml
+    python -m grounds.cli brief data/companies/example.yaml --prose
+"""
+
+from __future__ import annotations
+
+import argparse
+import sys
+from pathlib import Path
+
+from grounds.loader import load_all, load_company
+from grounds.render import render, render_table
+from grounds.verdict import assess
+
+
+def _assess_file(path: Path):
+    cf = load_company(path)
+    return cf, assess(
+        cf.signals,
+        company=cf.company,
+        fiscal_year=cf.fiscal_year,
+        capture=cf.capture,
+    )
+
+
+def cmd_screen(args: argparse.Namespace) -> int:
+    files = load_all(args.directory)
+    if not files:
+        print("No company files found in {d}".format(d=args.directory))
+        return 1
+
+    assessments = [
+        assess(
+            cf.signals,
+            company=cf.company,
+            fiscal_year=cf.fiscal_year,
+            capture=cf.capture,
+        )
+        for cf in files
+    ]
+
+    print(render_table(assessments))
+    print()
+
+    counts: dict[str, int] = {}
+    for a in assessments:
+        counts[a.verdict] = counts.get(a.verdict, 0) + 1
+
+    total = len(assessments)
+    actionable = counts.get("actionable", 0)
+    print(
+        "{total} screened. {act} actionable, {thin} thin, {abst} abstain. "
+        "{pct:.0f}% refused.".format(
+            total=total,
+            act=actionable,
+            thin=counts.get("thin", 0),
+            abst=counts.get("abstain", 0),
+            pct=100 * (total - actionable) / total,
+        )
+    )
+    return 0
+
+
+def cmd_brief(args: argparse.Namespace) -> int:
+    cf, assessment = _assess_file(Path(args.path))
+
+    prose = ""
+    if args.prose:
+        from grounds.compose import compose_opening
+
+        prose = compose_opening(assessment)
+
+    out = render(assessment, prose=prose)
+
+    if args.out:
+        Path(args.out).write_text(out, encoding="utf-8")
+        print("Wrote {p}".format(p=args.out))
+    else:
+        print(out)
+    return 0
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(
+        prog="grounds",
+        description="Evidence-bound account briefs. Refuses more than it reports.",
+    )
+    sub = parser.add_subparsers(dest="command", required=True)
+
+    p_screen = sub.add_parser("screen", help="one row per company, verdict first")
+    p_screen.add_argument("directory", help="directory of company YAML files")
+    p_screen.set_defaults(func=cmd_screen)
+
+    p_brief = sub.add_parser("brief", help="full brief for one company")
+    p_brief.add_argument("path", help="company YAML file")
+    p_brief.add_argument(
+        "--prose",
+        action="store_true",
+        help="have the model write the opening paragraph (needs ANTHROPIC_API_KEY)",
+    )
+    p_brief.add_argument("--out", help="write markdown to this path instead of stdout")
+    p_brief.set_defaults(func=cmd_brief)
+
+    args = parser.parse_args(argv)
+    return args.func(args)
+
+
+if __name__ == "__main__":
+    sys.exit(main())

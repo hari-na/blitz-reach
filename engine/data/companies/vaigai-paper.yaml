@@ -1,0 +1,33 @@
+company: Vaigai Paper Mills Ltd (fixture)
+fiscal_year: FY2025
+capture: synthetic
+
+# No revenue figure was captured, so nothing can be divided by anything. An
+# engine that proceeds here is guessing, and guessing about a named company is
+# the failure this whole design is built to prevent. Abstain before any
+# hypothesis runs.
+
+sources:
+  ar_mse:
+    doc_type: annual_report
+    title: Vaigai Paper Mills Ltd Annual Report 2024-25 (fixture)
+    year: FY2025
+    locator: "Note 27, Dues to micro and small enterprises, page 96"
+  hiring:
+    doc_type: job_posting
+    title: Vaigai Paper Mills careers listings, finance function (fixture)
+    year: FY2025
+    locator: "Captured 2026-11-26"
+
+signals:
+  - key: mse_principal_overdue
+    value: 740000000
+    unit: INR
+    kind: money
+    source: ar_mse
+
+  - key: finance_recon_openings
+    value: 4
+    unit: roles
+    kind: count
+    source: hiring
