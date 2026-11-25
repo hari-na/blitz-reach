@@ -66,14 +66,14 @@ signals:
     kind: days
     source: sector
 
-  - key: mse_principal_overdue
+  - key: mse_principal_outstanding
     value: 3100000000
     unit: INR
     kind: money
     source: ar_mse
     note: Principal remaining unpaid to micro and small enterprises beyond the appointed day
 
-  - key: mse_interest_accrued
+  - key: mse_interest_accrued_unpaid
     value: 475000000
     unit: INR
     kind: money
@@ -87,7 +87,7 @@ signals:
     source: caro
     note: Undisputed statutory dues outstanding more than six months, auditor reported
 
-  - key: disputed_statutory_dues
+  - key: disputed_gst_dues
     value: 880000000
     unit: INR
     kind: money

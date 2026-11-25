@@ -47,7 +47,7 @@ signals:
     note: Revenue from operations
 
   # H01. Principal unpaid to micro and small enterprises beyond the appointed day.
-  - key: mse_principal_overdue
+  - key: mse_principal_outstanding
     value: 0
     unit: INR
     kind: money
@@ -55,7 +55,7 @@ signals:
 
   # H01, optional. If the company disclosed accrued interest, that filed figure
   # is used instead of our derived one and confidence goes to high.
-  # - key: mse_interest_accrued
+  # - key: mse_interest_accrued_unpaid
   #   value: 0
   #   unit: INR
   #   kind: money
@@ -69,7 +69,7 @@ signals:
   #   source: caro
 
   # H03. From the contingent liabilities note.
-  # - key: disputed_statutory_dues
+  # - key: disputed_gst_dues
   #   value: 0
   #   unit: INR
   #   kind: money

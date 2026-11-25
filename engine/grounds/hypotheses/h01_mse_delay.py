@@ -1,91 +1,120 @@
 """H01: late payment to micro and small suppliers.
 
-Every audited Indian buyer must disclose, in its annual financial statements,
-the principal still unpaid to micro and small enterprise suppliers beyond the
-appointed day and the interest accrued on it. That makes "this company pays its
-small suppliers late" a filed, audited number rather than an inference.
+Corrected after reading three real annual reports. The first version sized this
+off the principal balance, which is wrong, and the filings are what showed it.
 
-The mechanism this points at is the one interview 04 described from the other
-side. A motor rewinding shop in Coimbatore draws 80% of its revenue from ten
-customers above Rs 2,000 crore turnover, waits 30 to 60 days, and when an
-invoice is held for a purchase-order mismatch the owner or his father drives to
-the customer's accounts department carrying printed email threads. The
-correction takes months. None of that is visible inside the buyer's own system,
-where the invoice simply sits unapproved.
+Section 22 of the MSMED Act requires the disclosure of "the principal amount and
+the interest due thereon remaining unpaid to any supplier at the end of each
+accounting year." That is a closing balance. It includes invoices that are not
+yet due. A large principal balance proves only that the company buys from small
+suppliers, which is not a finding.
+
+The interest lines are different. Interest under s.16 exists only where payment
+went past the appointed day, so a non-zero figure is the company's own audited
+admission that it paid late, and a nil figure is its audited claim that it did
+not. Two of the three companies captured report nil, and this hypothesis
+correctly says nothing about either.
+
+The mechanism it points at is the one interview 04 described from the other side.
+A motor rewinding shop in Coimbatore draws 80% of its revenue from ten customers
+above Rs 2,000 crore turnover, waits 30 to 60 days, and when an invoice is held
+for a purchase-order mismatch the owner or his father drives to the customer's
+accounts department carrying printed email threads. The correction takes months.
+None of that is visible inside the buyer's system, where the invoice simply sits.
 """
 
 from __future__ import annotations
 
 from grounds.fmt import inr
-from grounds.hypotheses.base import Confidence, Finding
-from grounds.hypotheses.rates import (
-    MSMED_PENAL_CITE,
-    MSMED_PENAL_RATE,
-)
-from grounds.provenance import Derivation, SignalSet
+from grounds.hypotheses.base import Finding
+from grounds.hypotheses.rates import MSMED_PENAL_CITE
+from grounds.provenance import Derivation, Signal, SignalSet
 
 
 class MsePaymentDelay:
     id = "H01"
-    title = "Statutory interest accruing on late payment to small suppliers"
-    requires = ("mse_principal_overdue", "revenue")
+    title = "Interest on late payment to micro and small suppliers"
+    requires = ("mse_interest_accrued_unpaid", "revenue")
 
     def evaluate(self, signals: SignalSet) -> Finding | None:
-        principal, revenue = signals.require("mse_principal_overdue", "revenue")
+        accrued, revenue = signals.require("mse_interest_accrued_unpaid", "revenue")
 
-        if principal.num <= 0:
+        paid = signals.get("mse_interest_paid_during_year")
+        paid_amount = paid.num if paid is not None else 0.0
+
+        # Nil interest is a filed, audited statement that the company paid its
+        # small suppliers on time. Saying anything here would be inventing a
+        # problem out of a balance sheet line.
+        if accrued.num <= 0 and paid_amount <= 0:
             return None
 
-        disclosed = signals.get("mse_interest_accrued")
-        confidence: Confidence
+        magnitude = accrued.num + paid_amount
+        principal = signals.get("mse_principal_outstanding")
 
-        if disclosed is not None and disclosed.num > 0:
-            # Two independently filed numbers. Prefer the company's own figure
-            # over ours, and say so.
-            magnitude = disclosed.num
-            derivation = Derivation(
-                label="Interest accrued on overdue MSE principal",
-                formula="interest_accrued_as_disclosed",
-                substituted=f"{inr(disclosed.num)} (as filed)",
-                result=magnitude,
-                unit="INR per year",
-                inputs=(disclosed, principal),
-            )
-            confidence = "high"
+        if paid is not None and paid_amount > 0:
+            formula = "mse_interest_accrued_unpaid + mse_interest_paid_during_year"
+            substituted = "{a} + {p}".format(a=inr(accrued.num), p=inr(paid_amount))
+            label = "Interest on late payment, accrued plus actually paid out"
         else:
-            magnitude = principal.num * MSMED_PENAL_RATE
-            derivation = Derivation(
-                label="Statutory interest on overdue MSE principal",
-                formula=f"mse_principal_overdue x {MSMED_PENAL_RATE:.4f}  [{MSMED_PENAL_CITE}]",
-                substituted=f"{inr(principal.num)} x {MSMED_PENAL_RATE:.4f}",
-                result=magnitude,
-                unit="INR per year",
-                inputs=(principal,),
+            formula = "mse_interest_accrued_unpaid"
+            substituted = inr(accrued.num)
+            label = "Interest accrued and remaining unpaid"
+
+        paid_clause = (
+            " It also paid out {p} of such interest during the year, so this is not a "
+            "year-end timing artifact: money left the building.".format(
+                p=inr(paid_amount)
             )
-            confidence = "medium"
+            if paid_amount > 0
+            else ""
+        )
+        principal_clause = (
+            " The outstanding balance owed to those suppliers is {b}, though that "
+            "figure includes invoices not yet due and is context rather than "
+            "evidence.".format(b=inr(principal.num))
+            if principal is not None
+            else ""
+        )
+
+        mechanism = (
+            "The company has filed, in audited accounts, that {a} of interest under the "
+            "MSMED Act is accrued and unpaid to micro and small suppliers. That interest "
+            "exists only where payment went past the appointed day, so this is its own "
+            "admission of late payment rather than our inference.{paid} It runs at three "
+            "times the RBI bank rate whether or not a supplier ever raises it, and since "
+            "AY 2024-25 the unpaid principal is also disallowed as a deduction under "
+            "s.43B(h) until paid. Neither consequence is triggered by a supplier "
+            "complaining. Both are triggered by the date on the invoice.{principal}"
+        ).format(a=inr(accrued.num), paid=paid_clause, principal=principal_clause)
+
+        evidence: tuple[Signal, ...] = (accrued, revenue)
+        if paid is not None:
+            evidence += (paid,)
+        if principal is not None:
+            evidence += (principal,)
 
         return Finding(
             hypothesis_id=self.id,
             title=self.title,
-            mechanism=(
-                "The company has filed that it owes micro and small suppliers "
-                f"{inr(principal.num)} past the appointed day. Interest on that runs "
-                "automatically under the MSMED Act whether or not anyone raises it, and "
-                "from AY 2024-25 the unpaid principal is also disallowed as a deduction "
-                "under s.43B(h) until it is paid. Neither consequence is triggered by a "
-                "supplier complaining. Both are triggered by the date on the invoice."
-            ),
+            mechanism=mechanism,
             magnitude=magnitude,
-            derivation=derivation,
-            confidence=confidence,
+            derivation=Derivation(
+                label="{l}  [{cite}]".format(l=label, cite=MSMED_PENAL_CITE),
+                formula=formula,
+                substituted=substituted,
+                result=magnitude,
+                unit="INR per year",
+                inputs=evidence[:1] + ((paid,) if paid is not None else ()),
+            ),
+            confidence="high",
             confirming_question=(
                 "Of your suppliers below the small-enterprise threshold, what share were "
                 "paid inside 45 days last quarter, and which system computes that number?"
             ),
             kills_if=(
                 "Treasury already reports days-to-pay split by supplier size, the 45-day "
-                "breach rate is tracked monthly, and the disclosed balance is a timing "
-                "artifact of the year-end cutoff rather than a standing pattern."
+                "breach rate is tracked monthly, and the interest arose on a small number "
+                "of disputed invoices rather than across the supplier base."
             ),
-            evidence=(principal, revenue) + ((disclosed,) if disclosed else ()),
+            evidence=evidence,
         )

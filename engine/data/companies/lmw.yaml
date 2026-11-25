@@ -1,0 +1,87 @@
+company: LMW Limited
+fiscal_year: FY2026
+capture: hand_seeded
+
+# Formerly Lakshmi Machine Works, Coimbatore. Textile spinning machinery, so a
+# direct customer of shops like the one in interview 04.
+#
+# Read by hand from the FY2025-26 annual report, downloaded from BSE and kept at
+# data/filings/lmw-fy2026.pdf. The report is laid out two printed pages to a PDF
+# page, so both numbers are cited.
+#
+# This company is the reason the capture was worth doing. Every interest line in
+# its MSMED note is nil, which is an audited statement that it pays its micro and
+# small suppliers within the appointed day. H01 must stay silent here, and the
+# verdict must come out abstain.
+
+sources:
+  dr_results:
+    doc_type: annual_report
+    title: LMW Limited Annual Report 2025-26
+    year: FY2026
+    locator: "Directors' Report, revenue from operations, PDF page 46"
+  note_30_3:
+    doc_type: annual_report
+    title: LMW Limited Annual Report 2025-26
+    year: FY2026
+    locator: "Note 30.3, Disclosure as per Schedule III (MSMED), page 213 (PDF page 109), figures in crores"
+  note_30_1:
+    doc_type: annual_report
+    title: LMW Limited Annual Report 2025-26
+    year: FY2026
+    locator: "Note 30.1, Contingent Liabilities, page 212 (PDF page 109), figures in crores"
+  caro_vii:
+    doc_type: caro
+    title: LMW Limited Independent Auditor's Report 2025-26
+    year: FY2026
+    locator: "CARO 2020 clause (vii)(b), PDF page 89"
+
+signals:
+  - key: revenue
+    value: 30818436546
+    unit: INR
+    kind: money
+    source: dr_results
+    note: "Revenue from operations, Rs 3,081.84 crore"
+
+  - key: mse_principal_outstanding
+    value: 755200000
+    unit: INR
+    kind: money
+    source: note_30_3
+    note: "Principal and interest due thereon remaining unpaid, Rs 75.52 crore. Closing balance, not an overdue figure"
+
+  - key: mse_interest_accrued_unpaid
+    value: 0
+    unit: INR
+    kind: money
+    source: note_30_3
+    note: "Interest accrued and remaining unpaid at the end of the year: nil"
+
+  - key: mse_interest_paid_during_year
+    value: 0
+    unit: INR
+    kind: money
+    source: note_30_3
+    note: "Interest paid along with payments made beyond the appointed day: nil"
+
+  - key: undisputed_statutory_dues_over_6m
+    value: 0
+    unit: INR
+    kind: money
+    source: caro_vii
+    note: "Auditor: no undisputed amounts in arrears over six months at 31-03-2026"
+
+  - key: disputed_gst_dues
+    value: 9300000
+    unit: INR
+    kind: money
+    source: note_30_1
+    note: "Goods and Service Tax claims not acknowledged as debt, Rs 0.93 crore"
+
+  - key: disputed_dues_total
+    value: 81100000
+    unit: INR
+    kind: money
+    source: note_30_1
+    note: "Central excise Rs 0.98 cr plus GST Rs 0.93 cr plus income tax Rs 6.20 cr"

@@ -117,6 +117,25 @@ def render(assessment: Assessment, prose: str = "") -> str:
             )
         lines.append("")
 
+    if a.cleared:
+        lines += [
+            "## Tested and clear",
+            "",
+            "These ran on complete filings and found nothing. This is the half of an "
+            "abstain that matters: not that nobody looked, but that the documents were "
+            "read and the company is clean on this point.",
+            "",
+            "| Hypothesis | Result |",
+            "|---|---|",
+        ]
+        for hid, title in a.cleared:
+            lines.append(
+                "| `{hid}` {title} | nothing filed to act on |".format(
+                    hid=hid, title=title
+                )
+            )
+        lines.append("")
+
     if a.skipped:
         lines += [
             "## Not tested",

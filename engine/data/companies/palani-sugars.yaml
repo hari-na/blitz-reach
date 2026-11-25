@@ -31,7 +31,7 @@ signals:
     kind: money
     source: ar_pl
 
-  - key: disputed_statutory_dues
+  - key: disputed_gst_dues
     value: 140000000
     unit: INR
     kind: money

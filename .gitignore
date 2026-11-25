@@ -4,3 +4,4 @@ __pycache__/
 engine/out/
 .venv/
 venv/
+engine/data/filings/*.pdf

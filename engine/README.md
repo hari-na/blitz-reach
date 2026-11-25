@@ -16,7 +16,41 @@ produces a confident paragraph. That is why nothing lands. This one is built to
 read a thousand and refuse most of them, so the ones it does not refuse are
 worth an hour of someone's time.
 
-On the four fixtures shipped here it refuses three.
+On the seven companies shipped here it refuses five.
+
+## What it says about three real companies
+
+Captured by hand from FY2025-26 annual reports downloaded from BSE, every figure
+cited to a page.
+
+| Company | Verdict | Why |
+|---|---|---|
+| The India Cements Limited | **actionable** | Rs 190.48 cr of GST demands under appeal, Rs 34.29 cr of annual interest exposure, 0.765% of revenue |
+| LMW Limited | **abstain** | every interest line in its MSMED note is nil. Audited proof it pays small suppliers on time |
+| Seshasayee Paper and Boards | **abstain** | nil MSMED interest, and the capture was never finished. The brief says which figures are missing |
+
+**Reading real filings corrected two real errors**, which is the entire reason
+to do it rather than reason from fixtures.
+
+H01 used to size late payment off the principal balance in the MSMED note. That
+balance is a closing figure including invoices not yet due, so it only proves the
+company buys from small suppliers. LMW has Rs 75.52 crore of it and nil interest
+on every line, meaning it pays on time, and the old version would have walked
+into Coimbatore announcing a problem the company's own auditors say it does not
+have. Interest is the real signal: under s.16 it exists only where payment went
+past the appointed day.
+
+H03 used to size off total disputed statutory dues. India Cements' annexure
+totals Rs 930.26 crore, mostly excise and sales tax running from 1995-96, sitting
+at the Supreme Court and CESTAT, plus Rs 438.62 crore of electricity, stamp duty
+and mining cases. Thirty years of tax law under appeal is not a reconciliation
+failure. It now takes the GST slice only, because GST is self-assessed and a
+demand under it starts as a disagreement between a filed return and the ledger,
+and the brief prints what was excluded so a reader can argue with the choice.
+
+India Cements also pays real MSMED penal interest, Rs 1.41 crore of it during the
+year, and the materiality floor still throws it out at 0.059% of revenue. Both
+halves work: finding it, then declining to lead with it.
 
 ## The three rules it is built on
 
@@ -74,8 +108,11 @@ Tests:
 python tests/test_judgment.py
 ```
 
-Several of the eleven tests pin a refusal, because refusing is the behavior most
-likely to erode as hypotheses get added.
+Fifteen tests, and most of them pin a refusal, because refusing is the behavior
+most likely to erode as hypotheses get added. Four pin judgments the real filings
+taught: that nil filed interest means silence, that disputed dues are sized on
+the GST slice and not the grand total, that real penal interest can still be
+immaterial, and that a half-finished capture has to admit it.
 
 ## No API key required
 
@@ -132,8 +169,8 @@ here, not an inference.
 | ID | Hypothesis | Source | Confidence ceiling |
 |---|---|---|---|
 | `H04` | Undisputed statutory dues outstanding over six months | CARO 2020 clause vii(a), auditor reported | high |
-| `H01` | Statutory interest on late payment to micro and small suppliers | MSMED Act s.22 disclosure in the annual accounts | high |
-| `H03` | Interest running on disputed statutory dues | contingent liabilities note | medium |
+| `H01` | Interest on late payment to micro and small suppliers | MSMED Act s.22 disclosure, the interest lines, not the balance | high |
+| `H03` | Interest exposure on disputed GST demands | CARO clause vii(b) annexure, GST rows only | medium |
 | `H02` | Payables cycle out of line with the sector | balance sheet plus a sector comparator | medium |
 | `H05` | Open headcount in reconciliation and payables | job postings | low, can never lead |
 
@@ -145,16 +182,32 @@ comes from, so a reader argues with the law rather than with us. `RBI_BANK_RATE`
 is assumed and flagged: verify it against the current notification before any
 live use, because every MSMED interest figure scales with it.
 
-## What is not real yet
+## Real captures and fixtures
 
-The four company files in `data/companies` are **synthetic fixtures**. They carry
-`capture: synthetic`, every brief prints that in its footer, and the cited
-documents do not exist. They exercise the engine across all three verdicts; they
-are not evidence about anyone.
+Three company files are real, marked `capture: hand_seeded`, read by hand from
+the PDFs in `data/filings`. Find the figures in a 300-page report with:
 
-`data/companies/_template.yaml` is the shape for a real capture. Next step is
-three real ones, captured by hand from published annual reports, with
-`capture: hand_seeded`.
+```bash
+python -I tools/peek.py data/filings/india-cements-fy2026.pdf
+```
+
+Four files are **synthetic fixtures** carrying `capture: synthetic`. Every brief
+prints that in its footer and the documents they cite do not exist. They stay
+because they exercise paths the real captures do not, such as a company with no
+revenue figure at all, and a company where the only surviving finding rests on
+the deliberately weak signal.
+
+`data/companies/_template.yaml` is the shape for a new capture. A leading
+underscore keeps it out of `screen`.
+
+## Not tested is not the same as clear
+
+An abstain has two very different causes and the brief never blurs them. A
+hypothesis that ran on complete filings and found nothing appears under **Tested
+and clear**. One that never ran appears under **Not tested**, with the exact
+signals it was missing. LMW abstains with two hypotheses clear; Seshasayee
+abstains with four never tested, and its brief says so rather than passing an
+unfinished capture off as a clean company.
 
 ## Where the reasoning came from
 

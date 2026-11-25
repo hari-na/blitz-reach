@@ -63,13 +63,19 @@ signals:
     kind: days
     source: sector
 
-  - key: mse_principal_overdue
+  - key: mse_principal_outstanding
     value: 12000000
     unit: INR
     kind: money
     source: ar_mse
 
-  - key: disputed_statutory_dues
+  - key: mse_interest_accrued_unpaid
+    value: 2070000
+    unit: INR
+    kind: money
+    source: ar_mse
+
+  - key: disputed_gst_dues
     value: 64000000
     unit: INR
     kind: money

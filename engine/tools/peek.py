@@ -100,6 +100,13 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--context", type=int, default=3, help="lines either side")
     args = parser.parse_args(argv)
 
+    # Annual reports contain tick marks, rupee signs and typographic dashes that
+    # a cp1252 console cannot encode. Replace rather than crash.
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    except (AttributeError, ValueError):
+        pass
+
     path = Path(args.pdf)
     if not path.exists():
         sys.exit("No such file: {p}".format(p=path))

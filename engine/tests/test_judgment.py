@@ -121,6 +121,74 @@ def test_ranking_prefers_confidence_over_size() -> None:
     assert order == sorted(order, key=lambda c: -ranks[c]), order
 
 
+def test_nil_filed_interest_means_say_nothing() -> None:
+    """LMW Limited, real filing, and the best test in this suite.
+
+    Every interest line in its MSMED note is nil, which is an audited statement
+    that it pays micro and small suppliers inside the appointed day. Its
+    principal balance is Rs 75.52 crore, and an engine that sized off that
+    balance would announce a problem at a company whose own auditors say there
+    isn't one. The first version of H01 did exactly that. This pins the fix.
+    """
+    a = _assess("lmw.yaml")
+    assert a.verdict == "abstain", a.verdict
+    assert a.lead is None, a.lead
+    assert "mse_principal_outstanding" in a.signals_present, a.signals_present
+    fired = [f.hypothesis_id for f in a.material] + [
+        d.finding.hypothesis_id for d in a.discarded
+    ]
+    assert "H01" not in fired, fired
+
+
+def test_disputed_dues_are_sized_on_the_gst_slice_only() -> None:
+    """The India Cements Limited, real filing.
+
+    Its disputed-dues annexure totals Rs 930.26 crore, most of it excise and
+    sales tax litigation running from 1995-96 and sitting at the Supreme Court,
+    plus Rs 438.62 crore of electricity, stamp duty and mining cases. Thirty
+    years of tax law under appeal is not a reconciliation failure. H03 takes the
+    GST slice, Rs 190.48 crore, and the test fails if anyone widens it back.
+    """
+    a = _assess("india-cements.yaml")
+    assert a.verdict == "actionable", a.verdict
+    assert a.lead is not None and a.lead.hypothesis_id == "H03", a.lead
+
+    gst_slice = 1_904_811_038
+    expected = gst_slice * 0.18
+    assert abs(a.lead.magnitude - expected) < 1.0, a.lead.magnitude
+    # Sized off the grand total this would be more than four times larger.
+    assert a.lead.magnitude < 9_302_553_773 * 0.18 / 4, a.lead.magnitude
+    # And the brief has to admit what it left out.
+    assert "pre-GST" in a.lead.mechanism, a.lead.mechanism
+
+
+def test_real_interest_that_was_actually_paid_is_still_immaterial() -> None:
+    """India Cements paid Rs 1.41 crore of MSMED penal interest. It does not matter.
+
+    H01 fires on real filed evidence of habitual late payment, and the
+    materiality floor throws it out at 0.059% of revenue. Both halves have to
+    work: detecting it, and then declining to lead with it.
+    """
+    a = _assess("india-cements.yaml")
+    discarded = {d.finding.hypothesis_id: d for d in a.discarded}
+    assert "H01" in discarded, list(discarded)
+    assert discarded["H01"].share < 0.001, discarded["H01"].share
+
+
+def test_a_half_finished_capture_says_so() -> None:
+    """Seshasayee's CARO and disputed-dues figures were never captured.
+
+    The brief must abstain and name the missing signals rather than quietly
+    scoring the company on the two hypotheses that happened to have data.
+    """
+    a = _assess("seshasayee-paper.yaml")
+    assert a.verdict == "abstain", a.verdict
+    assert len(a.skipped) == 4, a.skipped
+    needed = {m for s in a.skipped for m in s.missing}
+    assert "disputed_gst_dues" in needed, needed
+    assert "undisputed_statutory_dues_over_6m" in needed, needed
+
+
 def test_composer_rejects_invented_numbers() -> None:
     facts = "Amount at stake per year: Rs 47.50 cr\nShare of revenue: 1.131%"
     assert check_no_new_numbers("Rs 47.50 cr, which is 1.131% of revenue.", facts) == ""

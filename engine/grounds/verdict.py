@@ -50,6 +50,12 @@ class Assessment:
     skipped: tuple[Skipped, ...]
     signal_count: int
     slug: str = ""
+    signals_present: tuple[str, ...] = ()
+    # Hypotheses that ran on complete data and found nothing. Distinct from
+    # `skipped`, which never ran. An abstain backed by these means the filings
+    # were read and are clean; an abstain backed only by `skipped` means nobody
+    # finished the capture. Conflating the two would be the worst bug in here.
+    cleared: tuple[tuple[str, str], ...] = ()
 
     @property
     def material(self) -> tuple[Finding, ...]:
@@ -87,6 +93,7 @@ def assess(
             skipped=(),
             signal_count=len(signals),
             slug=slug,
+            signals_present=tuple(signals.keys()),
         )
 
     # Without revenue nothing can be sized, and an unsized finding cannot be
@@ -103,6 +110,7 @@ def assess(
 
     findings: list[Finding] = []
     skipped: list[Skipped] = []
+    cleared: list[tuple[str, str]] = []
 
     for hyp in REGISTRY:
         result = run_one(hyp, signals)
@@ -110,6 +118,8 @@ def assess(
             skipped.append(result)
         elif result is not None:
             findings.append(result)
+        else:
+            cleared.append((hyp.id, hyp.title))
 
     material: list[Finding] = []
     discarded: list[Discarded] = []
@@ -124,23 +134,37 @@ def assess(
     material.sort(key=_rank_key, reverse=True)
     discarded.sort(key=lambda d: d.share, reverse=True)
 
+    cleared_clause = (
+        " {n} ran on complete filings and found nothing.".format(n=len(cleared))
+        if cleared
+        else ""
+    )
+
     if not material:
         if discarded:
             reason = (
-                "{n} hypotheses fired and every one came in below the {floor} materiality "
-                "floor. The largest was {title} at {amount} a year, {share} of revenue. "
-                "Nothing here is worth an outbound conversation."
+                "{n} {word} fired and every one came in below the {floor} materiality "
+                "floor. The largest was {title} at {amount} a year, {share} of revenue."
+                "{cleared} Nothing here is worth an outbound conversation."
             ).format(
                 n=len(discarded),
+                word="hypothesis" if len(discarded) == 1 else "hypotheses",
                 floor=pct(QUICKLIME_FLOOR, 1),
                 title=discarded[0].finding.title.lower(),
                 amount=inr(discarded[0].finding.magnitude),
                 share=pct(discarded[0].share),
+                cleared=cleared_clause,
             )
+        elif cleared:
+            reason = (
+                "No hypothesis fired.{cleared} {n} of {total} could not be tested for "
+                "want of the filings they need."
+            ).format(cleared=cleared_clause, n=len(skipped), total=len(REGISTRY))
         else:
             reason = (
-                "No hypothesis fired. {n} of {total} could not be tested at all for want "
-                "of the filings they need."
+                "No hypothesis fired, and {n} of {total} could not be tested at all for "
+                "want of the filings they need. This is an unfinished capture, not a "
+                "clean company."
             ).format(n=len(skipped), total=len(REGISTRY))
         return Assessment(
             company=company,
@@ -155,6 +179,8 @@ def assess(
             skipped=tuple(skipped),
             signal_count=len(signals),
             slug=slug,
+            signals_present=tuple(signals.keys()),
+            cleared=tuple(cleared),
         )
 
     lead = next(
@@ -200,4 +226,6 @@ def assess(
         skipped=tuple(skipped),
         signal_count=len(signals),
         slug=slug,
+        signals_present=tuple(signals.keys()),
+        cleared=tuple(cleared),
     )

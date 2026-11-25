@@ -85,5 +85,10 @@ def load_company(path: str | Path) -> CompanyFile:
 
 
 def load_all(directory: str | Path) -> list[CompanyFile]:
+    """Every company file in a directory. Leading underscore means not a company."""
     directory = Path(directory)
-    return [load_company(p) for p in sorted(directory.glob("*.yaml"))]
+    return [
+        load_company(p)
+        for p in sorted(directory.glob("*.yaml"))
+        if not p.name.startswith("_")
+    ]
