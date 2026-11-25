@@ -49,6 +49,7 @@ class Assessment:
     discarded: tuple[Discarded, ...]
     skipped: tuple[Skipped, ...]
     signal_count: int
+    slug: str = ""
 
     @property
     def material(self) -> tuple[Finding, ...]:
@@ -68,6 +69,7 @@ def assess(
     company: str,
     fiscal_year: str,
     capture: str = "unknown",
+    slug: str = "",
 ) -> Assessment:
     revenue_sig = signals.get("revenue")
 
@@ -84,6 +86,7 @@ def assess(
             discarded=(),
             skipped=(),
             signal_count=len(signals),
+            slug=slug,
         )
 
     # Without revenue nothing can be sized, and an unsized finding cannot be
@@ -151,6 +154,7 @@ def assess(
             discarded=tuple(discarded),
             skipped=tuple(skipped),
             signal_count=len(signals),
+            slug=slug,
         )
 
     lead = next(
@@ -195,4 +199,5 @@ def assess(
         discarded=tuple(discarded),
         skipped=tuple(skipped),
         signal_count=len(signals),
+        slug=slug,
     )

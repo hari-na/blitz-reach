@@ -14,7 +14,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from grounds.compose import check_no_new_numbers  # noqa: E402
+from grounds.compose import check_no_new_numbers, compose  # noqa: E402
 from grounds.loader import load_company  # noqa: E402
 from grounds.provenance import (  # noqa: E402
     ProvenanceError,
@@ -41,6 +41,7 @@ def _assess(name: str):
         company=cf.company,
         fiscal_year=cf.fiscal_year,
         capture=cf.capture,
+        slug=cf.path.stem,
     )
 
 
@@ -125,6 +126,37 @@ def test_composer_rejects_invented_numbers() -> None:
     assert check_no_new_numbers("Rs 47.50 cr, which is 1.131% of revenue.", facts) == ""
     problem = check_no_new_numbers("This is costing them Rs 92.40 cr a year.", facts)
     assert "92.40" in problem, problem
+
+
+def test_a_clean_recorded_draft_survives_the_guard() -> None:
+    """The whole project has to run with no API key, so this path is load-bearing."""
+    a = _assess("kaveri-cements.yaml")
+    prose = compose(a, mode="replay", take="accepted")
+    assert prose.origin == "replay", prose.origin
+    assert "47.50" in prose.opening, prose.opening
+    assert "Replayed take" in prose.note, prose.note
+
+
+def test_a_dirty_recorded_draft_is_caught_and_replaced() -> None:
+    """The rejected take invents a total and a share of revenue. Both must be named."""
+    a = _assess("kaveri-cements.yaml")
+    prose = compose(a, mode="replay", take="rejected")
+    assert prose.origin == "deterministic", prose.origin
+    assert "number guard" in prose.note, prose.note
+    assert "126.00" in prose.note and "3.2" in prose.note, prose.note
+    # The invented figures must not reach the reader at all.
+    assert "126.00" not in prose.opening and "3.2%" not in prose.opening
+
+
+def test_composing_without_a_lead_is_refused() -> None:
+    a = _assess("nilgiri-textiles.yaml")
+    assert a.lead is None
+    try:
+        compose(a)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("composed prose for a company we decided to say nothing to")
 
 
 def test_hypotheses_that_cannot_run_are_reported_not_hidden() -> None:

@@ -1,0 +1,18 @@
+{
+  "company": "Kaveri Cements Ltd (fixture)",
+  "model": "claude-opus-5-5",
+  "recorded": "2026-11-26",
+  "source": "Both takes were written by hand against the composer system prompt in grounds/compose.py, because no API key was available when this was built. They are stand-ins, not transcripts of a real model response. Replace them with genuine recorded output once a key is set: run with --live and save the raw text here. Either way they go through the same verification path a live call does, which is the point of keeping them.",
+  "takes": [
+    {
+      "label": "accepted",
+      "comment": "Uses only figures present in the input. Passes the number guard.",
+      "text": "{\n  \"subject\": \"Kaveri Cements: Rs 47.50 cr of MSMED interest in your own filings\",\n  \"opening\": \"Your FY2025 accounts disclose Rs 310.00 cr owed to micro and small suppliers past the appointed day, and Rs 47.50 cr of interest accrued on it. That is 1.131% of revenue, and it accrues whether or not a supplier ever raises it. Worth asking who inside the business watches the 45 day clock, and which system tells them when it breaks.\"\n}"
+    },
+    {
+      "label": "rejected",
+      "comment": "Deliberately bad. Invents a total, invents a share of revenue, invents a peer benchmark, and adds sales language. The number guard catches it and the brief falls back to the deterministic opening. This take exists so the guard can be watched working without a network call.",
+      "text": "{\n  \"subject\": \"Kaveri Cements: Rs 126.00 cr leaking through accounts payable\"            ,\n  \"opening\": \"Across FY2025 your filings point to roughly Rs 126.00 cr of avoidable cost in accounts payable, about 3.2% of revenue, and peers in cement run materially tighter on supplier payment. Most of it traces back to manual invoice matching, which is exactly the kind of thing that disappears once the process is automated end to end.\"\n}"
+    }
+  ]
+}

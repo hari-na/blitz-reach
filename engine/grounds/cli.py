@@ -18,11 +18,16 @@ from grounds.verdict import assess
 
 def _assess_file(path: Path):
     cf = load_company(path)
-    return cf, assess(
+    return cf, _assess_company(cf)
+
+
+def _assess_company(cf):
+    return assess(
         cf.signals,
         company=cf.company,
         fiscal_year=cf.fiscal_year,
         capture=cf.capture,
+        slug=cf.path.stem,
     )
 
 
@@ -32,15 +37,7 @@ def cmd_screen(args: argparse.Namespace) -> int:
         print("No company files found in {d}".format(d=args.directory))
         return 1
 
-    assessments = [
-        assess(
-            cf.signals,
-            company=cf.company,
-            fiscal_year=cf.fiscal_year,
-            capture=cf.capture,
-        )
-        for cf in files
-    ]
+    assessments = [_assess_company(cf) for cf in files]
 
     print(render_table(assessments))
     print()
@@ -71,7 +68,7 @@ def cmd_brief(args: argparse.Namespace) -> int:
     if args.prose:
         from grounds.compose import compose_opening
 
-        prose = compose_opening(assessment)
+        prose = compose_opening(assessment, mode=args.prose_mode, take=args.take)
 
     out = render(assessment, prose=prose)
 
@@ -99,7 +96,24 @@ def main(argv: list[str] | None = None) -> int:
     p_brief.add_argument(
         "--prose",
         action="store_true",
-        help="have the model write the opening paragraph (needs ANTHROPIC_API_KEY)",
+        help="add a written opening. Works with no API key: falls back to a recorded take.",
+    )
+    p_brief.add_argument(
+        "--prose-mode",
+        choices=("auto", "live", "replay", "off"),
+        default="auto",
+        help=(
+            "auto (default): live if ANTHROPIC_API_KEY is set, else replay a recorded "
+            "take. live: call the model. replay: use a recorded take. off: deterministic."
+        ),
+    )
+    p_brief.add_argument(
+        "--take",
+        default="accepted",
+        help=(
+            "which recorded take to replay. 'rejected' is a deliberately bad draft, "
+            "kept so the number guard can be watched catching one."
+        ),
     )
     p_brief.add_argument("--out", help="write markdown to this path instead of stdout")
     p_brief.set_defaults(func=cmd_brief)

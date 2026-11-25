@@ -68,21 +68,48 @@ The brief that matters is the refusal:
 python -m grounds.cli brief data/companies/nilgiri-textiles.yaml
 ```
 
-Have the model write the opening paragraph (needs `ANTHROPIC_API_KEY`; without
-one it uses the deterministic opening and says so):
-
-```bash
-python -m grounds.cli brief data/companies/kaveri-cements.yaml --prose
-```
-
 Tests:
 
 ```bash
 python tests/test_judgment.py
 ```
 
-Three of the eight tests pin a refusal, because refusing is the behavior most
+Several of the eleven tests pin a refusal, because refusing is the behavior most
 likely to erode as hypotheses get added.
+
+## No API key required
+
+Nothing above calls a model. Provenance, hypotheses, arithmetic, materiality,
+ranking and all three verdicts are deterministic, so the engine runs offline with
+`pyyaml` as its only dependency.
+
+The model writes the opening paragraph, and even that path runs without a key:
+
+```bash
+python -m grounds.cli brief data/companies/kaveri-cements.yaml --prose
+```
+
+With `ANTHROPIC_API_KEY` set this calls the model. Without one it replays a
+recorded take from `data/replay/`. Both go through the same verification.
+
+The more interesting thing to look at is the guard catching a bad draft:
+
+```bash
+python -m grounds.cli brief data/companies/kaveri-cements.yaml --prose --take rejected
+```
+
+That take invents a total and a share of revenue. The brief reports exactly what
+was caught, drops the draft, and falls back to the deterministic opening:
+
+```
+> Draft discarded by the number guard: introduced numbers not present in the
+> evidence: 126.00, 3.2. Using the deterministic opening instead.
+```
+
+The takes in `data/replay/kaveri-cements.json` were written by hand against the
+composer's own system prompt, because no key was available when this was built.
+The file says so. They are stand-ins, not transcripts, and `--prose-mode live`
+plus a key replaces them with the real thing.
 
 ## The three verdicts
 

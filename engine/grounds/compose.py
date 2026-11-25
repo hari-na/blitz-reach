@@ -4,11 +4,15 @@ By the time this runs, every decision has been made: whether there is a problem,
 how big it is, how confident we are, and whether to say anything at all. The
 model writes the opening paragraph and a subject line. That is all it does.
 
-It is also not trusted to do that. `check_no_new_numbers` re-reads the model's
-output and rejects it if it contains a number that was not in the input, because
-an invented figure in a brief about a named company is the one failure this
-whole design exists to prevent. On rejection the deterministic opening is used
-instead and the brief says the model's draft was discarded.
+It is also not trusted to do that. `check_no_new_numbers` re-reads the output and
+rejects it if it contains a number that was not in the input, because an invented
+figure in a brief about a named company is the one failure this whole design
+exists to prevent.
+
+Three origins, one verification path. A live call, a recorded take replayed from
+disk, and a deterministic opening written from the finding itself all go through
+the same check. That means the project runs, and the guardrail can be watched
+firing, with no API key and no network.
 """
 
 from __future__ import annotations
@@ -17,11 +21,16 @@ import json
 import os
 import re
 from dataclasses import dataclass
+from pathlib import Path
+from typing import Literal
 
 from grounds.fmt import inr, pct
 from grounds.verdict import Assessment
 
 MODEL = "claude-opus-5-5"
+REPLAY_DIR = Path(__file__).resolve().parents[1] / "data" / "replay"
+
+Origin = Literal["live", "replay", "deterministic"]
 
 SYSTEM = """You write the opening of a briefing note for a field engineer who is \
 about to approach a company's finance leadership for the first time.
@@ -55,15 +64,14 @@ FALLBACK_TEMPLATE = (
 class Prose:
     subject: str
     opening: str
-    model_used: bool
-    rejected_reason: str = ""
+    origin: Origin
+    note: str = ""
 
     def render(self) -> str:
-        head = "**Subject:** {s}".format(s=self.subject)
-        body = self.opening
-        if not self.model_used and self.rejected_reason:
-            body += "\n\n> Model draft discarded: {r}".format(r=self.rejected_reason)
-        return head + "\n\n" + body
+        parts = ["**Subject:** {s}".format(s=self.subject), "", self.opening]
+        if self.note:
+            parts += ["", "> {n}".format(n=self.note)]
+        return "\n".join(parts)
 
 
 NUMBER_RE = re.compile(r"\d[\d,.]*")
@@ -95,10 +103,11 @@ def check_no_new_numbers(output: str, allowed_source_text: str) -> str:
     return ""
 
 
-def _facts(assessment: Assessment) -> str:
+def facts_for(assessment: Assessment) -> str:
+    """Exactly what the model is allowed to know. Also the whitelist it is checked against."""
     a = assessment
     if a.lead is None:
-        raise ValueError("compose_opening is only for an actionable assessment")
+        raise ValueError("there is no lead finding to write about")
 
     lines = [
         "Company: {c}".format(c=a.company),
@@ -138,7 +147,7 @@ def _facts(assessment: Assessment) -> str:
     return "\n".join(lines)
 
 
-def _fallback(assessment: Assessment) -> Prose:
+def deterministic(assessment: Assessment, note: str = "") -> Prose:
     a = assessment
     assert a.lead is not None
     sources = a.lead.sources()
@@ -152,35 +161,110 @@ def _fallback(assessment: Assessment) -> Prose:
             source=sources[0] if sources else "the filings cited below",
             question=a.lead.confirming_question,
         ),
-        model_used=False,
+        origin="deterministic",
+        note=note,
     )
 
 
-def compose(assessment: Assessment) -> Prose:
-    """Ask the model for an opening, verify it, fall back if it invents anything."""
-    if assessment.lead is None:
-        raise ValueError("nothing to compose: this assessment has no lead finding")
-
-    if not os.environ.get("ANTHROPIC_API_KEY"):
-        return Prose(
-            **{
-                **_fallback(assessment).__dict__,
-                "rejected_reason": "no ANTHROPIC_API_KEY set, used the deterministic opening",
-            }
+def _accept(text: str, facts: str, assessment: Assessment, origin: Origin) -> Prose:
+    """Parse and verify one draft, whatever produced it."""
+    start, end = text.find("{"), text.rfind("}")
+    if start == -1 or end == -1:
+        return deterministic(
+            assessment, "Draft discarded: not JSON. Using the deterministic opening."
         )
 
-    facts = _facts(assessment)
+    try:
+        payload = json.loads(text[start : end + 1])
+    except json.JSONDecodeError as exc:
+        return deterministic(
+            assessment,
+            "Draft discarded: JSON did not parse ({e}). Using the deterministic "
+            "opening.".format(e=exc),
+        )
 
+    subject = str(payload.get("subject", "")).strip()
+    opening = str(payload.get("opening", "")).strip()
+
+    if not subject or not opening:
+        return deterministic(
+            assessment,
+            "Draft discarded: subject or opening missing. Using the deterministic opening.",
+        )
+
+    problem = check_no_new_numbers(subject + " " + opening, facts)
+    if problem:
+        return deterministic(
+            assessment,
+            "Draft discarded by the number guard: {p}. Using the deterministic "
+            "opening instead.".format(p=problem),
+        )
+
+    return Prose(subject=subject, opening=opening, origin=origin)
+
+
+def available_takes(assessment: Assessment) -> list[str]:
+    path = _replay_path(assessment)
+    if not path.exists():
+        return []
+    data = json.loads(path.read_text(encoding="utf-8"))
+    return [str(t.get("label", "")) for t in data.get("takes", [])]
+
+
+def _replay_path(assessment: Assessment) -> Path:
+    slug = assessment.slug or re.sub(
+        r"[^a-z0-9]+", "-", assessment.company.lower()
+    ).strip("-")
+    return REPLAY_DIR / "{slug}.json".format(slug=slug)
+
+
+def from_replay(assessment: Assessment, take: str = "accepted") -> Prose:
+    """Replay a stored draft through the live verification path."""
+    path = _replay_path(assessment)
+    if not path.exists():
+        return deterministic(
+            assessment,
+            "No recorded take for this company. Using the deterministic opening.",
+        )
+
+    data = json.loads(path.read_text(encoding="utf-8"))
+    takes = {str(t.get("label")): t for t in data.get("takes", [])}
+    if take not in takes:
+        return deterministic(
+            assessment,
+            "No take named {t!r}. Available: {a}.".format(
+                t=take, a=", ".join(sorted(takes)) or "none"
+            ),
+        )
+
+    entry = takes[take]
+    facts = facts_for(assessment)
+    result = _accept(str(entry.get("text", "")), facts, assessment, "replay")
+
+    provenance = "Replayed take {t!r}. {src}".format(
+        t=take, src=str(data.get("source", "")).strip()
+    )
+    return Prose(
+        subject=result.subject,
+        opening=result.opening,
+        origin=result.origin,
+        note=(result.note + " " + provenance).strip(),
+    )
+
+
+def from_live(assessment: Assessment) -> Prose:
+    if not os.environ.get("ANTHROPIC_API_KEY"):
+        return deterministic(
+            assessment, "No ANTHROPIC_API_KEY set. Using the deterministic opening."
+        )
     try:
         import anthropic
     except ImportError:
-        return Prose(
-            **{
-                **_fallback(assessment).__dict__,
-                "rejected_reason": "anthropic package not installed",
-            }
+        return deterministic(
+            assessment, "anthropic package not installed. Using the deterministic opening."
         )
 
+    facts = facts_for(assessment)
     client = anthropic.Anthropic()
     response = client.messages.create(
         model=MODEL,
@@ -188,51 +272,36 @@ def compose(assessment: Assessment) -> Prose:
         system=SYSTEM,
         messages=[{"role": "user", "content": facts}],
     )
-
     text = "".join(
         block.text for block in response.content if getattr(block, "type", "") == "text"
     ).strip()
-
-    start, end = text.find("{"), text.rfind("}")
-    if start == -1 or end == -1:
-        return Prose(
-            **{
-                **_fallback(assessment).__dict__,
-                "rejected_reason": "model did not return JSON",
-            }
-        )
-
-    try:
-        payload = json.loads(text[start : end + 1])
-    except json.JSONDecodeError as exc:
-        return Prose(
-            **{
-                **_fallback(assessment).__dict__,
-                "rejected_reason": "model JSON did not parse: {e}".format(e=exc),
-            }
-        )
-
-    subject = str(payload.get("subject", "")).strip()
-    opening = str(payload.get("opening", "")).strip()
-
-    if not subject or not opening:
-        return Prose(
-            **{
-                **_fallback(assessment).__dict__,
-                "rejected_reason": "model omitted subject or opening",
-            }
-        )
-
-    problem = check_no_new_numbers(subject + " " + opening, facts)
-    if problem:
-        return Prose(
-            **{**_fallback(assessment).__dict__, "rejected_reason": problem}
-        )
-
-    return Prose(subject=subject, opening=opening, model_used=True)
+    return _accept(text, facts, assessment, "live")
 
 
-def compose_opening(assessment: Assessment) -> str:
+def compose(
+    assessment: Assessment,
+    mode: str = "auto",
+    take: str = "accepted",
+) -> Prose:
+    """mode: auto (live if a key is set, else replay), live, replay, off."""
+    if assessment.lead is None:
+        raise ValueError("nothing to compose: this assessment has no lead finding")
+
+    if mode == "off":
+        return deterministic(assessment)
+    if mode == "replay":
+        return from_replay(assessment, take=take)
+    if mode == "live":
+        return from_live(assessment)
+
+    if os.environ.get("ANTHROPIC_API_KEY"):
+        return from_live(assessment)
+    return from_replay(assessment, take=take)
+
+
+def compose_opening(
+    assessment: Assessment, mode: str = "auto", take: str = "accepted"
+) -> str:
     if assessment.lead is None:
         return ""
-    return compose(assessment).render()
+    return compose(assessment, mode=mode, take=take).render()
