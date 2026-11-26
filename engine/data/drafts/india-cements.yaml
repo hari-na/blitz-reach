@@ -27,6 +27,11 @@ sources:
     title: "india-cements-fy2026 Annual Report"
     year: FY2026
     locator: "PDF page 83"
+  p99:
+    doc_type: annual_report
+    title: "india-cements-fy2026 Annual Report"
+    year: FY2026
+    locator: "PDF page 99"
   p107:
     doc_type: annual_report
     title: "india-cements-fy2026 Annual Report"
@@ -42,6 +47,11 @@ sources:
     title: "india-cements-fy2026 Annual Report"
     year: FY2026
     locator: "PDF page 150"
+  p153:
+    doc_type: annual_report
+    title: "india-cements-fy2026 Annual Report"
+    year: FY2026
+    locator: "PDF page 153"
 
 signals:
   - key: mse_interest_accrued_unpaid
@@ -123,3 +133,23 @@ signals:
     filed_unit: unit
     source: p107
     note: "Auditor states no undisputed statutory dues in arrears over six months"
+
+  - key: related_party_trade_value
+    value: 27881400000
+    unit: INR
+    kind: money
+    as_filed: "278814.00"
+    filed_unit: lakh
+    prior_value: 3654149000
+    prior_as_filed: "36541.49"
+    source: p153
+    note: "Sum of 4 trade blocks (purchase of goods, receiving of services, rendering of services, sale of goods), each one's printed total reconciled against its own party rows before being used. Financing and payroll flows in the same note are excluded."
+
+  - key: kam_related_party
+    value: 1
+    unit: entities
+    kind: count
+    as_filed: "1"
+    filed_unit: unit
+    source: p99
+    note: "The auditor listed 'Verification of Significant Related Party Transactions' among 4 key audit matters, which are the matters they judged most significant in the whole audit"

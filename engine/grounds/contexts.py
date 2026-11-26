@@ -34,6 +34,12 @@ from grounds.provenance import Signal, SignalSet
 # company either way, so H01's silence is not evidence of anything.
 MSME_RELEVANCE_FLOOR = 0.05
 
+# Below this share of revenue, intercompany trade is not what shapes a close.
+RPT_INTENSITY_FLOOR = 0.05
+# A share that has at least doubled against a base that now matters is a
+# structural change in close workload inside one year.
+RPT_SHARP_RISE = 2.0
+
 # Bands for how many legal entities roll up into one set of accounts. These are
 # judgment, not filed, and the brief says so. Anchored on what the corpus
 # actually contains: India Cements consolidates 4, Dalmia 40, JSW Steel 70.
@@ -168,8 +174,25 @@ def close_complexity(signals: SignalSet) -> Context | None:
             "lands hardest, independently of anything owed to anyone."
         )
     elif _band(total) == "simple":
+        # An entity count is a poor proxy for close workload, and C03 can
+        # contradict it outright. India Cements consolidates four entities and
+        # runs 62% of its revenue through them, which is not a simple close by
+        # any reading. Where trade volume says otherwise, the count does not
+        # get to clear the company.
+        trade = signals.get("related_party_trade_value")
+        revenue = signals.get("revenue")
+        busy = (
+            trade is not None
+            and revenue is not None
+            and revenue.num > 0
+            and trade.num / revenue.num >= RPT_INTENSITY_FLOOR
+        )
         bearing = (
-            "A group this small has a close that a competent team already handles in "
+            "Few entities, but see C03: the volume running between them is what makes "
+            "this close heavy, not how many there are. An entity count is the wrong "
+            "measure here and the close argument is still open."
+            if busy
+            else "A group this small has a close that a competent team already handles in "
             "days. The close argument is not the way in here."
         )
     else:
@@ -185,7 +208,86 @@ def close_complexity(signals: SignalSet) -> Context | None:
     )
 
 
-CONTEXTS = (small_supplier_exposure, close_complexity)
+
+
+
+def related_party_intensity(signals: SignalSet) -> Context | None:
+    """C03. How much of the company's trade is with its own group.
+
+    The largest filed figure this engine reads, and still not a finding. Every
+    rupee of it has to be matched between two ledgers and eliminated on
+    consolidation, which is close work and is exactly what Zamp sells against.
+    But no filing anywhere states the cost of reconciling an intercompany
+    invoice, and multiplying a volume by a rate I invented is the one thing the
+    number guard in `compose.py` exists to stop. So it carries no magnitude,
+    cannot lead, and cannot move a verdict. The ratio is the signal.
+    """
+    trade = signals.get("related_party_trade_value")
+    revenue = signals.get("revenue")
+    if trade is None or revenue is None or revenue.num <= 0:
+        return None
+
+    share_now = trade.num / revenue.num
+    share_prior: float | None = None
+    if trade.prior_value is not None:
+        # Measured against the same denominator on purpose. A prior-year
+        # revenue is not always captured, and the question here is how much of
+        # this year's business runs through the group, not a restated history.
+        share_prior = float(trade.prior_value) / revenue.num
+
+    movement = ""
+    if share_prior is not None:
+        movement = ", against {p:.1f}% of the same revenue a year earlier".format(
+            p=share_prior * 100
+        )
+
+    statement = (
+        "{amt} of trade ran through related parties, {pct:.1f}% of revenue{move}. "
+        "Each of those transactions exists twice, once in each entity's ledger, "
+        "and has to be matched and eliminated before the group's accounts close."
+    ).format(amt=inr(trade.num), pct=share_now * 100, move=movement)
+
+    named_by_auditor = signals.get("kam_related_party") is not None
+    auditor_clause = (
+        " The auditor reached the same place independently: related party "
+        "transactions are one of the matters they named as most significant in "
+        "the entire audit."
+        if named_by_auditor
+        else ""
+    )
+
+    if share_now < RPT_INTENSITY_FLOOR:
+        bearing = (
+            "Intercompany trade is a small part of this company's activity, so the "
+            "close argument does not rest here."
+        )
+    elif share_prior is not None and share_prior > 0 and share_now / share_prior >= RPT_SHARP_RISE:
+        bearing = (
+            "This is the thing to ask about. The share has moved {x:.1f}x in a single "
+            "year, which is a structural change in how much reconciliation the close "
+            "requires. Processes do not re-fit themselves that fast, and whoever runs "
+            "the close absorbed it with the headcount they already had.{aud}"
+        ).format(x=share_now / share_prior, aud=auditor_clause)
+    else:
+        bearing = (
+            "A substantial share of trade is intercompany, so elimination and matching "
+            "are a standing part of every close here rather than an occasional "
+            "adjustment.{aud}"
+        ).format(aud=auditor_clause)
+
+    evidence = tuple(
+        s for s in (trade, signals.get("kam_related_party")) if s is not None
+    )
+    return Context(
+        context_id="C03",
+        title="Trade with its own group",
+        statement=statement,
+        evidence=evidence,
+        bearing=bearing,
+    )
+
+
+CONTEXTS = (small_supplier_exposure, close_complexity, related_party_intensity)
 
 
 def run_contexts(signals: SignalSet) -> tuple[Context, ...]:

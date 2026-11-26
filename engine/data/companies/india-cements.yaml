@@ -49,6 +49,16 @@ sources:
     title: The India Cements Limited Annual Report 2025-26
     year: FY2026
     locator: "Directors' Report, item 16, subsidiaries, page 44 (PDF page 47)"
+  note_37_8_b:
+    doc_type: annual_report
+    title: The India Cements Limited Annual Report 2025-26
+    year: FY2026
+    locator: "Note 37.8(B), transactions with related parties, pages 151-152 (PDF pages 153-154)"
+  kam_4:
+    doc_type: annual_report
+    title: The India Cements Limited Annual Report 2025-26
+    year: FY2026
+    locator: "Independent Auditor's Report, key audit matter 4, page 98 (PDF page 99)"
 
 signals:
   - key: revenue
@@ -165,3 +175,38 @@ signals:
     filed_unit: unit
     source: dr_subsidiaries
     note: "Four subsidiaries, none of which the company considers material"
+
+  # Context, not a finding. Trade volume with the group, summed from the four
+  # trade blocks in note 37.8(B). Each block's printed total was checked
+  # against its own per-party rows before being used:
+  #   sale of goods          0.00 + 0.00 + 0.00 + 2,47,270.02 =  2,47,270.02
+  #   purchase of goods          83.34 + 27,321.80            =     27,405.14
+  #   rendering of services    1,774.00 + 734.36              =      2,508.36
+  #   receiving of services  30.00 + 0.48 + 1,600.00          =      1,630.48
+  #                                                             -------------
+  #                                                              2,78,814.00
+  # Financing flows in the same note (debenture redemption, amounts received
+  # and repaid) and KMP remuneration are deliberately excluded: they are not
+  # trade and folding them in would only make the number bigger.
+  - key: related_party_trade_value
+    value: 27881400000
+    unit: INR
+    kind: money
+    as_filed: "278814.00"
+    filed_unit: lakh
+    prior_value: 3654149000
+    prior_as_filed: "36541.49"
+    source: note_37_8_b
+    note: "Trade with related parties, 62% of revenue against 8% a year earlier. UltraTech took control in December 2024, so the group this company trades inside is new"
+
+  # Context. The auditor independently named this as one of four matters most
+  # significant in the whole audit, which is corroboration from someone who
+  # read the ledgers rather than the annual report.
+  - key: kam_related_party
+    value: 1
+    unit: flag
+    kind: count
+    as_filed: "1"
+    filed_unit: unit
+    source: kam_4
+    note: "Key audit matter 4, \"Verification of Significant Related Party Transactions\""

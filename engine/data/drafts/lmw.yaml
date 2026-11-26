@@ -12,6 +12,8 @@ capture: parsed
 #   subsidiary_count: not stated in this document
 #   joint_venture_count: not stated in this document
 #   associate_count: not stated in this document
+#   related_party_trade_value: 0 trade block(s) reconciled against their party rows, which is too few to call a trade volume. The note is present but its layout is not one this reader can prove
+#   kam_related_party: the matters section was read but this report numbers the audit report's own paragraphs rather than the matters, so no title could be isolated. Scanning its prose instead returns sentences, not titles (page 86)
 
 sources:
   p46:

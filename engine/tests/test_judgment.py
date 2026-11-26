@@ -492,6 +492,171 @@ def test_hypotheses_that_cannot_run_are_reported_not_hidden() -> None:
     assert len(a.skipped) == 5, a.skipped
 
 
+
+
+
+# --------------------------------------------------------------------------
+# related party trade volume, and the traps found while reading it
+
+
+def test_one_party_row_is_not_proof_of_a_total() -> None:
+    """A block total is accepted because it reconciles, not because it is there.
+
+    With a single party row, "printed total equals the sum above it" holds for
+    any repeated pair of numbers, so the arithmetic proves nothing. The first
+    version of this reader accepted those and reported four company names as
+    trade blocks for Vardhman.
+    """
+    from grounds.extract_rpt import _blocks
+
+    one_row = [
+        "Sale of Goods",
+        "Some Subsidiary Limited",
+        "17.40",
+        "22.04",
+        "17.40",
+        "22.04",
+    ]
+    assert _blocks(one_row) == [], "a single row must not count as a proved total"
+
+    two_rows = [
+        "Sale of Goods",
+        "First Party Limited",
+        "10.00",
+        "4.00",
+        "Second Party Limited",
+        "7.40",
+        "18.04",
+        "17.40",
+        "22.04",
+    ]
+    proved = _blocks(two_rows)
+    assert len(proved) == 1
+    assert proved[0][0] == "Sale of Goods"
+    assert proved[0][2] == 17.40 and proved[0][3] == 22.04
+
+
+def test_a_block_whose_total_does_not_reconcile_is_dropped() -> None:
+    """The block boundary is proved by arithmetic or it is not used.
+
+    This is the bug that read India Cements' purchase of goods as 24,173.17
+    instead of 27,405.14: the block ran on past a heading the reader did not
+    know, and the total picked up belonged to a different section.
+    """
+    from grounds.extract_rpt import _blocks
+
+    lines = [
+        "Purchase of Goods",
+        "First Party Limited",
+        "10.00",
+        "4.00",
+        "Second Party Limited",
+        "7.40",
+        "18.04",
+        "999.99",  # a total from somewhere else
+        "888.88",
+    ]
+    assert _blocks(lines) == []
+
+
+def test_an_unpinned_matters_section_is_refused_not_read() -> None:
+    """An unbounded read of the auditor's matters lies in both directions.
+
+    Too short and the boilerplate paragraph is mistaken for the section, which
+    reported Dalmia as silent when its matters sit forty pages later. Too long
+    and the section swallows what follows, which reported JSW Steel as naming
+    related parties when the phrase was CARO text about loans to promoters.
+    """
+    from grounds.extract import Refused
+    from grounds.extract_rpt import extract_kam_related_party
+
+    # The boilerplate sentence and nothing else.
+    too_short = [
+        "Key Audit Matters are those matters that, in our professional judgement, "
+        "were of most significance in our audit. Other Information follows."
+    ]
+    got = extract_kam_related_party(too_short)
+    assert isinstance(got, Refused)
+
+    # No closing heading, so the section runs into everything after it, with
+    # the phrase present only as unrelated prose.
+    runaway = [
+        "Key Audit Matters\n"
+        + ("padding about the audit approach. " * 900)
+        + "advances in the nature of loans granted to promoters or related parties"
+    ]
+    got2 = extract_kam_related_party(runaway)
+    assert isinstance(got2, Refused), "a runaway section must not yield a hit"
+
+
+def test_a_matters_title_must_start_with_a_capital() -> None:
+    """`re.I` over the whole pattern made `[A-Z]` match lowercase.
+
+    That single flag turned the sentence fragment "the other liabilities
+    payable such as liquidated" into a key audit matter for Suzlon. The
+    structure is matched case-sensitively; only the topic word is not.
+    """
+    from grounds.extract_rpt import _numbered_titles
+
+    titles = _numbered_titles(
+        "1.\nVerification of Significant Related Party Transactions\n"
+        "2.\nthe other liabilities payable such as liquidated damages\n"
+    )
+    assert "Verification of Significant Related Party Transactions" in titles
+    assert not any(t.startswith("the ") for t in titles)
+
+
+def test_trade_volume_is_context_and_never_moves_a_verdict() -> None:
+    """The biggest filed figure in the engine is still not allowed to decide.
+
+    Every rupee of intercompany trade has to be matched and eliminated, which
+    is close work. But no filing states the cost of reconciling an
+    intercompany invoice, so turning the volume into a finding would need a
+    rate invented here. It stays a context.
+    """
+    cf = load_company(FIXTURES / "india-cements.yaml")
+    full = assess(
+        cf.signals, company=cf.company, fiscal_year=cf.fiscal_year, capture=cf.capture
+    )
+    assert any(c.context_id == "C03" for c in full.contexts), "fixture should carry C03"
+
+    stripped = SignalSet(
+        cf.signals.get(k)  # type: ignore[misc]
+        for k in cf.signals.keys()
+        if k not in ("related_party_trade_value", "kam_related_party")
+    )
+    without = assess(
+        stripped, company=cf.company, fiscal_year=cf.fiscal_year, capture=cf.capture
+    )
+    assert not any(c.context_id == "C03" for c in without.contexts)
+    assert full.verdict == without.verdict
+    assert full.lead == without.lead
+    assert len(full.material) == len(without.material)
+
+    # The guarantee is structural, not a matter of wording: a context has
+    # nowhere to put a cost. If a magnitude field ever appears on Context,
+    # this is the test that should fail.
+    c03 = next(c for c in full.contexts if c.context_id == "C03")
+    assert not hasattr(c03, "magnitude")
+    assert c03.context_id not in {f.hypothesis_id for f in full.material}
+    assert full.lead is None or full.lead.hypothesis_id != "C03"
+
+
+def test_an_entity_count_does_not_clear_a_busy_close() -> None:
+    """C02 counted four entities and said the close argument was not the way in.
+
+    C03 then showed 62% of revenue running between those same four. An entity
+    count is the weaker measure, so it does not get to clear the company.
+    """
+    cf = load_company(FIXTURES / "india-cements.yaml")
+    full = assess(
+        cf.signals, company=cf.company, fiscal_year=cf.fiscal_year, capture=cf.capture
+    )
+    c02 = next(c for c in full.contexts if c.context_id == "C02")
+    assert "not the way in" not in c02.bearing, c02.bearing
+    assert "C03" in c02.bearing
+
+
 if __name__ == "__main__":
     failures = 0
     for name, fn in sorted(globals().items()):

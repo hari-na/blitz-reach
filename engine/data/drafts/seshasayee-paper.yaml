@@ -12,6 +12,8 @@ capture: parsed
 #   subsidiary_count: not stated in this document
 #   joint_venture_count: not stated in this document
 #   associate_count: not stated in this document
+#   related_party_trade_value: 0 trade block(s) reconciled against their party rows, which is too few to call a trade volume. The note is present but its layout is not one this reader can prove
+#   kam_related_party: the auditor named 2 key audit matter(s) and none of them is about related party transactions (page 171)
 
 sources:
   p39:

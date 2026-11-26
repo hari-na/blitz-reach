@@ -643,6 +643,15 @@ def extract(path: Path, company: str = "", fiscal_year: str = "") -> Draft:
     caro = _extract_caro_zero(pages)
     (draft.found if isinstance(caro, Extracted) else draft.refused).append(caro)  # type: ignore[arg-type]
 
+    # Imported here rather than at module scope: extract_rpt reads Extracted,
+    # Refused and page_unit from this module, so a top-level import would be
+    # circular.
+    from grounds.extract_rpt import extract_kam_related_party, extract_related_party_trade
+
+    for fn in (extract_related_party_trade, extract_kam_related_party):
+        got3 = fn(pages)
+        (draft.found if isinstance(got3, Extracted) else draft.refused).append(got3)  # type: ignore[arg-type]
+
     return draft
 
 

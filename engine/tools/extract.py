@@ -90,6 +90,8 @@ def check(target: Path) -> int:
                     "msme_sourcing_share",
                     "subsidiary_count",
                     "undisputed_statutory_dues_over_6m",
+                    "related_party_trade_value",
+                    "kam_related_party",
                 }
                 if (stem, key) in EXPECTED_REFUSALS:
                     print(
