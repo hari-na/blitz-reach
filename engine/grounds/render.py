@@ -8,6 +8,8 @@ against the filing and does not have to take the engine's word for anything.
 
 from __future__ import annotations
 
+import re
+
 from grounds.fmt import inr, pct
 from grounds.hypotheses import Finding
 from grounds.materiality import LEAD_FLOOR, QUICKLIME_FLOOR
@@ -190,6 +192,100 @@ def render(assessment: Assessment, prose: str = "") -> str:
         ),
         "",
     ]
+
+    return "\n".join(lines)
+
+
+VERDICT_RANK = {"actionable": 0, "thin": 1, "abstain": 2}
+
+
+def _ordinal(n: int) -> str:
+    if 11 <= (n % 100) <= 13:
+        return "{n}th".format(n=n)
+    return "{n}{s}".format(n=n, s={1: "st", 2: "nd", 3: "rd"}.get(n % 10, "th"))
+
+
+def _first_sentence(text: str, limit: int = 160) -> str:
+    """First sentence, without breaking on the decimal point in '0.1%'."""
+    parts = re.split(r"(?<!\d)\.(?!\d)(?:\s|$)", text.strip(), maxsplit=1)
+    head = parts[0].strip()
+    return head if len(head) <= limit else head[: limit - 3].rstrip() + "..."
+
+
+def render_capacity(assessments: list[Assessment], capacity: int) -> str:
+    """Answer the only question a team with N people actually has.
+
+    Not "who could we approach", which produces a list longer than anyone can
+    work. "We have N slots this month. Which N?" Companies are ordered by what
+    was found and how well evidenced it is, slots are assigned only to the ones
+    carrying a lead, and if there are fewer of those than slots the shortfall is
+    stated rather than padded.
+
+    A prioritiser that fills every slot regardless is a lead generator wearing a
+    different label.
+    """
+    ranked = sorted(
+        assessments,
+        key=lambda a: (
+            VERDICT_RANK[a.verdict],
+            -(a.share(a.lead) if a.lead else 0.0),
+            a.company,
+        ),
+    )
+    qualified = [a for a in ranked if a.lead is not None]
+    assigned = qualified[:capacity]
+
+    lines = [
+        "{n} slots this month, {t} companies screened.".format(
+            n=capacity, t=len(assessments)
+        ),
+        "",
+    ]
+
+    if assigned:
+        lines += ["## Work these, in this order", ""]
+        for i, a in enumerate(assigned, start=1):
+            assert a.lead is not None
+            lines.append(
+                "{i}. **{c}** - {t}, {amt} a year, {sh} of revenue, {conf} confidence".format(
+                    i=i,
+                    c=a.company,
+                    t=a.lead.title.lower(),
+                    amt=inr(a.lead.magnitude),
+                    sh=pct(a.share(a.lead)),
+                    conf=a.lead.confidence,
+                )
+            )
+        lines.append("")
+
+    shortfall = capacity - len(assigned)
+    if shortfall > 0:
+        lines += [
+            "## {n} slot{s} unfilled".format(n=shortfall, s="" if shortfall == 1 else "s"),
+            "",
+            "There is no {n} company here worth an approach, and filling the slot "
+            "anyway is how a pipeline fills with companies nobody can name a reason "
+            "for. The constraint is not people. It is evidence.".format(
+                n=_ordinal(len(assigned) + 1)
+            ),
+            "",
+        ]
+
+    deferred = [a for a in ranked if a.lead is None]
+    if deferred:
+        lines += [
+            "## Deferred, with the reason",
+            "",
+            "| Company | Verdict | Why not |",
+            "|---|---|---|",
+        ]
+        for a in deferred:
+            lines.append(
+                "| {c} | {v} | {w} |".format(
+                    c=a.company, v=a.verdict, w=_first_sentence(a.reason)
+                )
+            )
+        lines.append("")
 
     return "\n".join(lines)
 

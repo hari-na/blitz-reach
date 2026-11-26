@@ -6,10 +6,35 @@ cite and show the arithmetic for.
 
 ## Why the refusing is the product
 
-Zamp can diagnose roughly 30 accounts a month because a forward-deployed
-engineer does each one by hand. The bottleneck is not writing outreach. It is
-knowing which 40 companies out of a thousand have a problem you can name with
-evidence.
+This is not a lead generator. Zamp does not need more companies: its pipeline is
+already longer than the people available to work it, and it is hiring to catch
+up. Every company in that pipeline is there because somebody did outbound and
+somebody else picked up the phone, which qualified them on reachability and on
+nothing else.
+
+So the question worth answering is not "who could we approach". It is **"we have
+N people this month, which N companies?"**
+
+```bash
+python -m grounds.cli screen data/companies --capacity 3
+```
+
+```
+3 slots this month, 7 companies screened.
+
+## Work these, in this order
+1. Kaveri Cements Ltd - interest on late payment to micro and small
+   suppliers, Rs 47.50 cr a year, 1.131% of revenue, high confidence
+
+## 2 slots unfilled
+There is no 2nd company here worth an approach, and filling the slot anyway
+is how a pipeline fills with companies nobody can name a reason for. The
+constraint is not people. It is evidence.
+```
+
+Leaving slots empty is the whole point. A prioritiser that always returns N
+companies is a lead generator wearing a different label, and it rebuilds the
+problem it was meant to fix.
 
 Every tool in this space optimizes for coverage: give it any company and it
 produces a confident paragraph. That is why nothing lands. This one is built to

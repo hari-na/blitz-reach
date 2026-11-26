@@ -15,7 +15,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from grounds.compose import check_no_new_numbers, compose  # noqa: E402
-from grounds.loader import load_company  # noqa: E402
+from grounds.loader import load_all, load_company  # noqa: E402
 from grounds.provenance import (  # noqa: E402
     ProvenanceError,
     ScaleError,
@@ -289,6 +289,47 @@ def test_a_half_finished_capture_says_so() -> None:
     needed = {m for s in a.skipped for m in s.missing}
     assert "disputed_gst_dues" in needed, needed
     assert "undisputed_statutory_dues_over_6m" in needed, needed
+
+
+def test_capacity_view_leaves_slots_empty_rather_than_padding() -> None:
+    """The prioritiser has to be able to say there is no second company.
+
+    An FDE team with N slots does not want a list of length N. It wants the
+    companies worth a slot, which may be fewer. A tool that always returns N is
+    a lead generator with a different label, and it reproduces the problem it
+    was built to fix: a pipeline full of companies nobody can name a reason for.
+    """
+    from grounds.render import render_capacity
+
+    files = load_all(FIXTURES)
+    assessments = [
+        assess(
+            cf.signals,
+            company=cf.company,
+            fiscal_year=cf.fiscal_year,
+            capture=cf.capture,
+            slug=cf.path.stem,
+        )
+        for cf in files
+    ]
+    qualified = [a for a in assessments if a.lead is not None]
+    assert qualified, "fixtures must include at least one actionable company"
+
+    out = render_capacity(assessments, capacity=len(qualified) + 2)
+    assert "2 slots unfilled" in out, out[:400]
+    assert "The constraint is not people. It is evidence." in out
+
+    # Everything without a lead has to appear with a stated reason, not vanish.
+    for a in assessments:
+        if a.lead is None:
+            assert a.company in out, a.company
+
+    # And a smaller capacity must not promote an unqualified company.
+    tight = render_capacity(assessments, capacity=1)
+    assert "slots unfilled" not in tight, tight[:400]
+    for a in assessments:
+        if a.lead is None:
+            assert "1. **{c}**".format(c=a.company) not in tight
 
 
 def test_composer_rejects_invented_numbers() -> None:

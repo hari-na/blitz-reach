@@ -12,7 +12,7 @@ import sys
 from pathlib import Path
 
 from grounds.loader import load_all, load_company
-from grounds.render import render, render_table
+from grounds.render import render, render_capacity, render_table
 from grounds.verdict import assess
 
 
@@ -38,6 +38,10 @@ def cmd_screen(args: argparse.Namespace) -> int:
         return 1
 
     assessments = [_assess_company(cf) for cf in files]
+
+    if args.capacity:
+        print(render_capacity(assessments, args.capacity))
+        return 0
 
     print(render_table(assessments))
     print()
@@ -89,6 +93,14 @@ def main(argv: list[str] | None = None) -> int:
 
     p_screen = sub.add_parser("screen", help="one row per company, verdict first")
     p_screen.add_argument("directory", help="directory of company YAML files")
+    p_screen.add_argument(
+        "--capacity",
+        type=int,
+        help=(
+            "how many companies you can actually work this month. Returns that many, "
+            "in order, and says plainly when there are fewer worth the slots."
+        ),
+    )
     p_screen.set_defaults(func=cmd_screen)
 
     p_brief = sub.add_parser("brief", help="full brief for one company")
