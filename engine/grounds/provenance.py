@@ -35,6 +35,7 @@ class ScaleError(ValueError):
 # mistake available in this whole pipeline.
 UNIT_MULTIPLIERS: dict[str, float] = {
     "unit": 1.0,
+    "percent": 0.01,
     "thousand": 1_000.0,
     "lakh": 100_000.0,
     "million": 1_000_000.0,
@@ -80,6 +81,12 @@ class Signal:
     # typed into a capture without the loader rejecting it.
     as_filed: str = ""
     filed_unit: str = ""
+    # Every figure in an Indian annual report is printed beside last year's.
+    # Reading only one column throws away the direction, which usually says
+    # more than the level: rising means something is deteriorating, flat means
+    # it is structural, a jump means an event happened.
+    prior_value: float | None = None
+    prior_as_filed: str = ""
 
     def __post_init__(self) -> None:
         if not self.key.strip():
@@ -95,6 +102,7 @@ class Signal:
                 f"Signal {self.key!r} is kind={self.kind} but value is not numeric."
             )
         self._check_scale()
+        self._check_prior_scale()
 
     def _check_scale(self) -> None:
         if not self.as_filed and not self.filed_unit:
@@ -136,6 +144,70 @@ class Signal:
         if not isinstance(self.value, (int, float)):
             raise ProvenanceError(f"Signal {self.key!r} is not numeric.")
         return float(self.value)
+
+
+    def _check_prior_scale(self) -> None:
+        """The prior year is printed on the same scale, so it is checked too."""
+        if self.prior_value is None and not self.prior_as_filed:
+            return
+        if self.prior_value is None or not self.prior_as_filed:
+            raise ProvenanceError(
+                f"Signal {self.key!r} gives only one of prior_value / prior_as_filed."
+            )
+        if not self.filed_unit:
+            raise ProvenanceError(
+                f"Signal {self.key!r} has a prior year but no filed_unit to scale it by."
+            )
+        try:
+            printed = float(self.prior_as_filed.replace(",", "").strip())
+        except ValueError as exc:
+            raise ProvenanceError(
+                f"Signal {self.key!r} prior_as_filed {self.prior_as_filed!r} is not a number."
+            ) from exc
+        unit = self.filed_unit.strip().lower().rstrip("s")
+        expected = printed * UNIT_MULTIPLIERS[unit]
+        if abs(float(self.prior_value) - expected) > max(abs(expected) * 1e-6, 1.0):
+            raise ScaleError(
+                f"Signal {self.key!r} prior year does not reconcile: "
+                f"{self.prior_as_filed} {self.filed_unit} is {expected:,.0f}, but "
+                f"{float(self.prior_value):,.0f} was recorded."
+            )
+
+    @property
+    def has_prior(self) -> bool:
+        return self.prior_value is not None
+
+    @property
+    def change(self) -> float | None:
+        """Absolute change against last year, or None if there is no prior."""
+        if self.prior_value is None or not isinstance(self.value, (int, float)):
+            return None
+        return float(self.value) - float(self.prior_value)
+
+    @property
+    def change_ratio(self) -> float | None:
+        """Proportional change, or None where last year was zero or absent."""
+        if self.prior_value is None or not self.prior_value:
+            return None
+        if not isinstance(self.value, (int, float)):
+            return None
+        return (float(self.value) - float(self.prior_value)) / abs(float(self.prior_value))
+
+    def direction(self, flat_band: float = 0.05) -> str:
+        """rising / falling / flat / new / gone, or unknown with no prior year."""
+        if self.prior_value is None or not isinstance(self.value, (int, float)):
+            return "unknown"
+        now, before = float(self.value), float(self.prior_value)
+        if before == 0 and now == 0:
+            return "flat"
+        if before == 0:
+            return "new"
+        if now == 0:
+            return "gone"
+        ratio = (now - before) / abs(before)
+        if abs(ratio) <= flat_band:
+            return "flat"
+        return "rising" if ratio > 0 else "falling"
 
 
 @dataclass(frozen=True)

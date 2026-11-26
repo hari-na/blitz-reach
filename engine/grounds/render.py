@@ -91,6 +91,28 @@ def render(assessment: Assessment, prose: str = "") -> str:
     lines.append("---")
     lines.append("")
 
+    if a.contexts:
+        lines += [
+            "## The shape of this company",
+            "",
+            "Filed facts that carry no money figure of their own. They do not move the "
+            "verdict. They decide how it should be read, and how a first conversation "
+            "would open.",
+            "",
+        ]
+        for ctx in a.contexts:
+            lines += [
+                "**`{cid}` {title}.** {statement}".format(
+                    cid=ctx.context_id, title=ctx.title, statement=ctx.statement
+                ),
+                "",
+            ]
+            if ctx.bearing:
+                lines += ["> {b}".format(b=ctx.bearing), ""]
+            for cite in ctx.sources():
+                lines.append("- {cite}".format(cite=cite))
+            lines.append("")
+
     if a.vetoes:
         lines += [
             "## Why we are not calling anyway",

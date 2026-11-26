@@ -39,6 +39,17 @@ sources:
     locator: "Rating action and Non cooperation by Issuer, 20 March 2023"
     url: "https://crisil.com/mnt/winshare/Ratings/RatingList/RatingDocs/TheIndiaCementsLimited_March%2020,%202023_RR_312753.html"
 
+  brsr_p8:
+    doc_type: annual_report
+    title: The India Cements Limited Annual Report 2025-26
+    year: FY2026
+    locator: "BRSR, Principle 8, Essential Indicator 4, page 80 (PDF page 83)"
+  dr_subsidiaries:
+    doc_type: annual_report
+    title: The India Cements Limited Annual Report 2025-26
+    year: FY2026
+    locator: "Directors' Report, item 16, subsidiaries, page 44 (PDF page 47)"
+
 signals:
   - key: revenue
     value: 44846900000
@@ -131,3 +142,26 @@ signals:
     kind: count
     source: crisil_2023
     note: "Withdrawn at the request of the company on receipt of no-dues certificates from its banks"
+
+  # Context, not a finding. Exposure to the MSMED regime, which decides whether
+  # H01 reading nil would have meant anything. Filed as a percentage of input
+  # material by value, with the prior year beside it.
+  - key: msme_sourcing_share
+    value: 0.17
+    unit: share
+    kind: ratio
+    as_filed: "17"
+    filed_unit: percent
+    prior_value: 0.0112
+    prior_as_filed: "1.12"
+    source: brsr_p8
+    note: "17% of input material by value, against 1.12% the previous year. A fifteenfold shift in one year is either a real change of supply base or a change of definition, and either is worth asking about"
+
+  - key: subsidiary_count
+    value: 4
+    unit: entities
+    kind: count
+    as_filed: "4"
+    filed_unit: unit
+    source: dr_subsidiaries
+    note: "Four subsidiaries, none of which the company considers material"

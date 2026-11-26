@@ -74,6 +74,8 @@ def load_company(path: str | Path) -> CompanyFile:
                 note=str(spec.get("note", "") or ""),
                 as_filed=str(spec.get("as_filed", "") or ""),
                 filed_unit=str(spec.get("filed_unit", "") or ""),
+                prior_value=spec.get("prior_value"),
+                prior_as_filed=str(spec.get("prior_as_filed", "") or ""),
             )
         )
 

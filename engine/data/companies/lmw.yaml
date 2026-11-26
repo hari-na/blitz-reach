@@ -36,6 +36,12 @@ sources:
     year: FY2026
     locator: "CARO 2020 clause (vii)(b), PDF page 89"
 
+  brsr_p8:
+    doc_type: annual_report
+    title: LMW Limited Annual Report 2025-26
+    year: FY2026
+    locator: "BRSR, Principle 8, Essential Indicator 4, PDF page 73"
+
 signals:
   - key: revenue
     value: 30818436546
@@ -99,3 +105,16 @@ signals:
     filed_unit: crore
     source: note_30_1
     note: "Central excise Rs 0.98 cr plus GST Rs 0.93 cr plus income tax Rs 6.20 cr"
+
+  # Context. No subsidiary count is captured: LMW names its subsidiaries in
+  # prose rather than stating a total, so C02 is absent rather than guessed.
+  - key: msme_sourcing_share
+    value: 0.22
+    unit: share
+    kind: ratio
+    as_filed: "22"
+    filed_unit: percent
+    prior_value: 0.17
+    prior_as_filed: "17"
+    source: brsr_p8
+    note: "22% of input material by value, up from 17%"

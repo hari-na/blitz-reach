@@ -26,6 +26,7 @@ from grounds.materiality import (
     share_of_revenue,
 )
 from grounds.provenance import SignalSet
+from grounds.contexts import Context, run_contexts
 from grounds.qualifiers import Veto, run_qualifiers
 
 Verdict = Literal["actionable", "thin", "abstain"]
@@ -60,6 +61,9 @@ class Assessment:
     # Reasons not to approach this company whatever was found. A qualifier
     # never creates a finding; it only stops one being acted on.
     vetoes: tuple[Veto, ...] = ()
+    # Filed facts with no money figure. They never move a verdict; they say
+    # what shape the company is, and when a silence is uninformative.
+    contexts: tuple[Context, ...] = ()
 
     @property
     def material(self) -> tuple[Finding, ...]:
@@ -112,6 +116,7 @@ def assess(
 
     revenue = revenue_sig.num
     vetoes = run_qualifiers(signals)
+    contexts = run_contexts(signals)
 
     findings: list[Finding] = []
     skipped: list[Skipped] = []
@@ -187,6 +192,7 @@ def assess(
             signals_present=tuple(signals.keys()),
             cleared=tuple(cleared),
             vetoes=vetoes,
+            contexts=contexts,
         )
 
     lead = next(
@@ -225,6 +231,7 @@ def assess(
             signals_present=tuple(signals.keys()),
             cleared=tuple(cleared),
             vetoes=vetoes,
+            contexts=contexts,
         )
 
     if lead is None:
@@ -264,4 +271,5 @@ def assess(
         signals_present=tuple(signals.keys()),
         cleared=tuple(cleared),
         vetoes=vetoes,
+        contexts=contexts,
     )

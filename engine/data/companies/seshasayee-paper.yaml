@@ -32,6 +32,17 @@ sources:
     year: FY2026
     locator: "MSMED disclosure, items (c) to (e), PDF page 219"
 
+  brsr_p8:
+    doc_type: annual_report
+    title: Seshasayee Paper and Boards Limited Annual Report 2025-26
+    year: FY2026
+    locator: "BRSR, Principle 8, Essential Indicator 4, page 142 (PDF page 144)"
+  dr_subsidiary:
+    doc_type: annual_report
+    title: Seshasayee Paper and Boards Limited Annual Report 2025-26
+    year: FY2026
+    locator: "Directors' Report, Subsidiary, PDF page 42"
+
 signals:
   - key: revenue
     value: 17101700000
@@ -68,3 +79,27 @@ signals:
     filed_unit: crore
     source: note_msmed
     note: "Interest due and payable for delay, paid beyond the appointed day: Nil"
+
+  # Context, and the reason this company's nil interest is worth something.
+  # Paper mills buy wood from farmers, so the small-supplier share is the
+  # highest in the corpus. Nil MSMED interest at 59% exposure is discipline;
+  # the same nil at 3% would mean nothing.
+  - key: msme_sourcing_share
+    value: 0.59
+    unit: share
+    kind: ratio
+    as_filed: "59"
+    filed_unit: percent
+    prior_value: 0.51
+    prior_as_filed: "51"
+    source: brsr_p8
+    note: "59% approx of input material by value, up from 51% approx. The report states both as approximate"
+
+  - key: subsidiary_count
+    value: 1
+    unit: entities
+    kind: count
+    as_filed: "1"
+    filed_unit: unit
+    source: dr_subsidiary
+    note: "One wholly owned subsidiary, Esvi International (Engineers & Exporters) Limited, which holds property"

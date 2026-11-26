@@ -242,6 +242,35 @@ place: a filed zero is what makes an abstain mean "read and clean" instead of
 finds anybody, and H01 is selective. Of ten large listed companies, **none**
 would be approached on late payment to small suppliers alone.
 
+## Three kinds of output, not one
+
+A finding carries a money figure and can lead a brief. A veto carries none and
+only stops one. A **context** carries none either, never moves a verdict, and
+says what shape the company is.
+
+Contexts exist because the two indicators that survived testing against ten
+reports, the share of purchases from small suppliers and the number of entities
+consolidated, do not convert honestly into rupees. Exposure is not a loss.
+Forty subsidiaries is not a cost until you invent a cost per subsidiary, and
+inventing numbers is the thing the composer's number guard exists to stop.
+
+| | Reads | Says |
+|---|---|---|
+| `C01` Exposure to small suppliers | BRSR Principle 8, with the prior year | What share of purchases is in MSMED scope, and which way it is moving |
+| `C02` Close complexity | The stated subsidiary, joint venture and associate counts | How many entities roll up into one month-end close |
+
+C01 earns its place by saying when a silence means nothing. Seshasayee Paper
+sources **59%** of its inputs from small suppliers, up from 51%, and reports nil
+MSMED interest on every line. That nil is real discipline. The identical nil at
+a company sourcing 2.69% would be an artifact, and the brief says so instead of
+letting a reader treat them as cleared.
+
+India Cements went from **1.12% to 17%** in one year. Either its supply base
+changed or its definition did, and both are worth asking about.
+
+Every figure is printed beside last year's in an annual report, so trends cost
+nothing extra. The prior year is scale-checked exactly like the current one.
+
 ## What it reads
 
 Indian statutory filings, because they carry a signal US disclosure does not:

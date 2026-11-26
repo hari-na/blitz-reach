@@ -332,6 +332,102 @@ def test_capacity_view_leaves_slots_empty_rather_than_padding() -> None:
             assert "1. **{c}**".format(c=a.company) not in tight
 
 
+def test_the_prior_year_is_scale_checked_as_well() -> None:
+    """A trend is only worth having if last year's figure is as guarded as this year's."""
+    ok = Signal(
+        key="msme_sourcing_share",
+        value=0.59,
+        unit="share",
+        kind="ratio",
+        source=GOOD_SOURCE,
+        as_filed="59",
+        filed_unit="percent",
+        prior_value=0.51,
+        prior_as_filed="51",
+    )
+    assert ok.direction() == "rising", ok.direction()
+    assert ok.change_ratio is not None and ok.change_ratio > 0.15
+
+    try:
+        Signal(
+            key="msme_sourcing_share",
+            value=0.59,
+            unit="share",
+            kind="ratio",
+            source=GOOD_SOURCE,
+            as_filed="59",
+            filed_unit="percent",
+            prior_value=51.0,  # forgot to scale the prior year
+            prior_as_filed="51",
+        )
+    except ScaleError:
+        pass
+    else:
+        raise AssertionError("an unscaled prior year was accepted")
+
+
+def test_a_context_never_changes_a_verdict() -> None:
+    """Contexts carry no magnitude and must not leak into the decision.
+
+    Seshasayee carries both contexts. Stripping them has to leave the verdict,
+    the lead and the findings exactly as they were, or a fact with no money
+    figure has started deciding who gets called.
+    """
+    cf = load_company(FIXTURES / "seshasayee-paper.yaml")
+    with_ctx = assess(
+        cf.signals, company=cf.company, fiscal_year=cf.fiscal_year, capture=cf.capture
+    )
+    assert with_ctx.contexts, "fixture should carry contexts"
+
+    stripped = SignalSet(
+        cf.signals.get(k)  # type: ignore[misc]
+        for k in cf.signals.keys()
+        if k not in ("msme_sourcing_share", "subsidiary_count")
+    )
+    without = assess(
+        stripped, company=cf.company, fiscal_year=cf.fiscal_year, capture=cf.capture
+    )
+    assert without.contexts == ()
+    assert with_ctx.verdict == without.verdict, (with_ctx.verdict, without.verdict)
+    assert with_ctx.lead == without.lead
+    assert len(with_ctx.material) == len(without.material)
+
+
+def test_exposure_says_when_a_silence_means_nothing() -> None:
+    """The point of C01: H01's nil is only evidence if there was exposure.
+
+    Seshasayee buys 59% of its inputs from small suppliers and reports nil
+    interest, so the nil is real discipline. At a low enough share the same nil
+    would be an artifact, and the brief has to say so rather than let a reader
+    treat the company as cleared.
+    """
+    from grounds.contexts import MSME_RELEVANCE_FLOOR, small_supplier_exposure
+
+    high = _assess("seshasayee-paper.yaml")
+    c01 = next(c for c in high.contexts if c.context_id == "C01")
+    assert "59.00%" in c01.statement, c01.statement
+    assert "51.00% last year" in c01.statement, c01.statement
+    assert "not evidence of discipline" not in c01.bearing
+
+    thin_exposure = SignalSet(
+        [
+            Signal(
+                key="msme_sourcing_share",
+                value=0.0269,
+                unit="share",
+                kind="ratio",
+                source=GOOD_SOURCE,
+                as_filed="2.69",
+                filed_unit="percent",
+            )
+        ]
+    )
+    low = small_supplier_exposure(thin_exposure)
+    assert low is not None
+    assert "not evidence of discipline" in low.bearing, low.bearing
+    assert MSME_RELEVANCE_FLOOR == 0.05
+
+
 def test_composer_rejects_invented_numbers() -> None:
     facts = "Amount at stake per year: Rs 47.50 cr\nShare of revenue: 1.131%"
     assert check_no_new_numbers("Rs 47.50 cr, which is 1.131% of revenue.", facts) == ""
