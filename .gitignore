@@ -5,3 +5,14 @@ engine/out/
 .venv/
 venv/
 engine/data/filings/*.pdf
+corpus/pdfs/
+corpus/text/
+corpus/logs/
+corpus/status.json
+corpus/tmp/
+corpus/sitemaps/
+corpus/discovered.jsonl
+corpus/fetched.jsonl
+corpus/companies.txt
+corpus/discover-status.json
+corpus/manifest-test.csv
