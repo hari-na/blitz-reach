@@ -16,3 +16,5 @@ corpus/fetched.jsonl
 corpus/companies.txt
 corpus/discover-status.json
 corpus/manifest-test.csv
+corpus/logs/
+corpus/*.out
