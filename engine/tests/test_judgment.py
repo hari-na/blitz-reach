@@ -278,17 +278,26 @@ def test_real_interest_that_was_actually_paid_is_still_immaterial() -> None:
 
 
 def test_a_half_finished_capture_says_so() -> None:
-    """Seshasayee's CARO and disputed-dues figures were never captured.
+    """Seshasayee's disputed-dues figure was never captured, and the brief says so.
 
-    The brief must abstain and name the missing signals rather than quietly
-    scoring the company on the two hypotheses that happened to have data.
+    This test used to expect four skipped hypotheses including H04, because I
+    searched for the auditor's six-month clause by hand and could not find it.
+    The extractor located it on its first run, so H04 now runs and comes back
+    clear. The remaining gap is real and must still be named: without
+    disputed GST dues, H03 cannot be tested, and H03 is the only hypothesis
+    that has ever fired on a real company.
     """
     a = _assess("seshasayee-paper.yaml")
     assert a.verdict == "abstain", a.verdict
-    assert len(a.skipped) == 4, a.skipped
+
+    skipped = {s.hypothesis_id for s in a.skipped}
+    cleared = {cid for cid, _ in a.cleared}
+    assert "H03" in skipped, skipped
+    assert "H04" in cleared, cleared
+    assert "H04" not in skipped, skipped
+
     needed = {m for s in a.skipped for m in s.missing}
     assert "disputed_gst_dues" in needed, needed
-    assert "undisputed_statutory_dues_over_6m" in needed, needed
 
 
 def test_capacity_view_leaves_slots_empty_rather_than_padding() -> None:
