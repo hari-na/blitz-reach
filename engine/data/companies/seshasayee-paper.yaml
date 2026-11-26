@@ -26,6 +26,11 @@ sources:
     title: Seshasayee Paper and Boards Limited Annual Report 2025-26
     year: FY2026
     locator: "Note 19, Trade Payables, PDF page 218, figures in crores"
+  caro_vii:
+    doc_type: caro
+    title: Seshasayee Paper and Boards Limited Independent Auditor's Report 2025-26
+    year: FY2026
+    locator: "CARO 2020 clause (vii)(a), located by tools/extract.py"
   note_msmed:
     doc_type: annual_report
     title: Seshasayee Paper and Boards Limited Annual Report 2025-26
@@ -103,3 +108,15 @@ signals:
     filed_unit: unit
     source: dr_subsidiary
     note: "One wholly owned subsidiary, Esvi International (Engineers & Exporters) Limited, which holds property"
+
+  # Found by the extractor, not by me. I searched for this clause by hand and
+  # missed it, and the brief said so: four hypotheses untested. The machine
+  # located it on the first run.
+  - key: undisputed_statutory_dues_over_6m
+    value: 0
+    unit: INR
+    kind: money
+    as_filed: "0"
+    filed_unit: unit
+    source: caro_vii
+    note: "Auditor states no undisputed statutory dues in arrears over six months"

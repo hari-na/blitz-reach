@@ -1,0 +1,113 @@
+company: jsw-steel-fy2026
+fiscal_year: UNKNOWN
+capture: parsed
+
+# Written by tools/extract.py from jsw-steel-fy2026.pdf.
+# Page numbers are PDF pages, not printed pages. Every figure records the
+# number as printed and the scale declared on that same page, so the loader
+# re-checks the arithmetic and refuses the file if it does not reconcile.
+
+# Refused, and therefore absent rather than guessed:
+#   mse_interest_paid_during_year: the row was not found in this document
+#   mse_principal_outstanding: the row was not found in this document
+#   disputed_gst_dues: the row was not found in this document
+
+sources:
+  p14:
+    doc_type: annual_report
+    title: "jsw-steel-fy2026 Annual Report"
+    year: UNKNOWN
+    locator: "PDF page 14"
+  p17:
+    doc_type: annual_report
+    title: "jsw-steel-fy2026 Annual Report"
+    year: UNKNOWN
+    locator: "PDF page 17"
+  p182:
+    doc_type: annual_report
+    title: "jsw-steel-fy2026 Annual Report"
+    year: UNKNOWN
+    locator: "PDF page 182"
+  p197:
+    doc_type: annual_report
+    title: "jsw-steel-fy2026 Annual Report"
+    year: UNKNOWN
+    locator: "PDF page 197"
+  p231:
+    doc_type: annual_report
+    title: "jsw-steel-fy2026 Annual Report"
+    year: UNKNOWN
+    locator: "PDF page 231"
+  p260:
+    doc_type: annual_report
+    title: "jsw-steel-fy2026 Annual Report"
+    year: UNKNOWN
+    locator: "PDF page 260"
+
+signals:
+  - key: mse_interest_accrued_unpaid
+    value: 60000000
+    unit: INR
+    kind: money
+    as_filed: "6"
+    filed_unit: crore
+    prior_value: 60000000
+    prior_as_filed: "6"
+    source: p260
+    note: "Interest accrued and remaining unpaid at the end of the year"
+
+  - key: msme_sourcing_share
+    value: 0.1321
+    unit: share
+    kind: ratio
+    as_filed: "13.21"
+    filed_unit: percent
+    prior_value: 0.0558
+    prior_as_filed: "5.58"
+    source: p182
+    note: "Share of input material by value sourced from micro and small enterprises"
+
+  - key: subsidiary_count
+    value: 46
+    unit: entities
+    kind: count
+    as_filed: "46"
+    filed_unit: unit
+    source: p197
+    note: "Subsidiaries consolidated, as stated in the directors' report"
+
+  - key: joint_venture_count
+    value: 50
+    unit: entities
+    kind: count
+    as_filed: "50"
+    filed_unit: unit
+    source: p14
+    note: "Joint ventures, as stated in the directors' report"
+
+  - key: associate_count
+    value: 5
+    unit: entities
+    kind: count
+    as_filed: "5"
+    filed_unit: unit
+    source: p197
+    note: "Associates, as stated in the directors' report"
+
+  - key: revenue
+    value: 1854700000000
+    unit: INR
+    kind: money
+    as_filed: "185470"
+    filed_unit: crore
+    source: p17
+    note: "Revenue from operations, stated 3 times and agreeing, on pages 17, 156, 186"
+
+  - key: undisputed_statutory_dues_over_6m
+    value: 0
+    unit: INR
+    kind: money
+    as_filed: "0"
+    filed_unit: unit
+    source: p231
+    note: "Auditor states no undisputed statutory dues in arrears over six months"

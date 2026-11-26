@@ -84,7 +84,7 @@ signals:
     unit: INR
     kind: money
     as_filed: "0"
-    filed_unit: crore
+    filed_unit: unit
     source: caro_vii
     note: "Auditor: no undisputed amounts in arrears over six months at 31-03-2026"
 

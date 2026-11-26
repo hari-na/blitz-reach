@@ -1,0 +1,86 @@
+company: tnpl-fy2026
+fiscal_year: FY2020
+capture: parsed
+
+# Written by tools/extract.py from tnpl-fy2026.pdf.
+# Page numbers are PDF pages, not printed pages. Every figure records the
+# number as printed and the scale declared on that same page, so the loader
+# re-checks the arithmetic and refuses the file if it does not reconcile.
+
+# Refused, and therefore absent rather than guessed:
+#   disputed_gst_dues: the row was not found in this document
+#   subsidiary_count: not stated in this document
+#   joint_venture_count: not stated in this document
+#   associate_count: not stated in this document
+#   revenue: no revenue figure is stated with a scale beside it
+
+sources:
+  p204:
+    doc_type: annual_report
+    title: "tnpl-fy2026 Annual Report"
+    year: FY2020
+    locator: "PDF page 204"
+  p222:
+    doc_type: annual_report
+    title: "tnpl-fy2026 Annual Report"
+    year: FY2020
+    locator: "PDF page 222"
+  p271:
+    doc_type: annual_report
+    title: "tnpl-fy2026 Annual Report"
+    year: FY2020
+    locator: "PDF page 271"
+
+signals:
+  - key: mse_interest_accrued_unpaid
+    value: 0
+    unit: INR
+    kind: money
+    as_filed: "0"
+    filed_unit: lakh
+    prior_value: 0
+    prior_as_filed: "0"
+    source: p271
+    note: "Interest accrued and remaining unpaid at the end of the year"
+
+  - key: mse_interest_paid_during_year
+    value: 0
+    unit: INR
+    kind: money
+    as_filed: "0"
+    filed_unit: lakh
+    prior_value: 0
+    prior_as_filed: "0"
+    source: p271
+    note: "Interest paid along with payments made beyond the appointed day"
+
+  - key: mse_principal_outstanding
+    value: 51817000.0
+    unit: INR
+    kind: money
+    as_filed: "518.17"
+    filed_unit: lakh
+    prior_value: 18475000
+    prior_as_filed: "184.75"
+    source: p271
+    note: "Closing balance owed to micro and small enterprises, not an overdue figure"
+
+  - key: msme_sourcing_share
+    value: 0.03
+    unit: share
+    kind: ratio
+    as_filed: "3"
+    filed_unit: percent
+    prior_value: 0.05
+    prior_as_filed: "5"
+    source: p204
+    note: "Share of input material by value sourced from micro and small enterprises"
+
+  - key: undisputed_statutory_dues_over_6m
+    value: 0
+    unit: INR
+    kind: money
+    as_filed: "0"
+    filed_unit: unit
+    source: p222
+    note: "Auditor states no undisputed statutory dues in arrears over six months"

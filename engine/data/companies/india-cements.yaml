@@ -95,7 +95,7 @@ signals:
     unit: INR
     kind: money
     as_filed: "0"
-    filed_unit: lakh
+    filed_unit: unit
     source: caro_vii_a
     note: "Auditor: no undisputed statutory dues in arrears over six months at 31-03-2026"
 

@@ -1,0 +1,99 @@
+company: lmw-fy2026
+fiscal_year: FY2026
+capture: parsed
+
+# Written by tools/extract.py from lmw-fy2026.pdf.
+# Page numbers are PDF pages, not printed pages. Every figure records the
+# number as printed and the scale declared on that same page, so the loader
+# re-checks the arithmetic and refuses the file if it does not reconcile.
+
+# Refused, and therefore absent rather than guessed:
+#   disputed_gst_dues: found the row on page 89 but no scale is declared on that page, and taking one from elsewhere in the document is how a hundredfold error happens (page 89)
+#   subsidiary_count: not stated in this document
+#   joint_venture_count: not stated in this document
+#   associate_count: not stated in this document
+
+sources:
+  p46:
+    doc_type: annual_report
+    title: "lmw-fy2026 Annual Report"
+    year: FY2026
+    locator: "PDF page 46"
+  p73:
+    doc_type: annual_report
+    title: "lmw-fy2026 Annual Report"
+    year: FY2026
+    locator: "PDF page 73"
+  p89:
+    doc_type: annual_report
+    title: "lmw-fy2026 Annual Report"
+    year: FY2026
+    locator: "PDF page 89"
+  p109:
+    doc_type: annual_report
+    title: "lmw-fy2026 Annual Report"
+    year: FY2026
+    locator: "PDF page 109"
+
+signals:
+  - key: mse_interest_accrued_unpaid
+    value: 0
+    unit: INR
+    kind: money
+    as_filed: "0"
+    filed_unit: crore
+    prior_value: 0
+    prior_as_filed: "0"
+    source: p109
+    note: "Interest accrued and remaining unpaid at the end of the year"
+
+  - key: mse_interest_paid_during_year
+    value: 0
+    unit: INR
+    kind: money
+    as_filed: "0"
+    filed_unit: crore
+    prior_value: 0
+    prior_as_filed: "0"
+    source: p109
+    note: "Interest paid along with payments made beyond the appointed day"
+
+  - key: mse_principal_outstanding
+    value: 755200000
+    unit: INR
+    kind: money
+    as_filed: "75.52"
+    filed_unit: crore
+    prior_value: 535400000
+    prior_as_filed: "53.54"
+    source: p109
+    note: "Closing balance owed to micro and small enterprises, not an overdue figure"
+
+  - key: msme_sourcing_share
+    value: 0.22
+    unit: share
+    kind: ratio
+    as_filed: "22"
+    filed_unit: percent
+    prior_value: 0.17
+    prior_as_filed: "17"
+    source: p73
+    note: "Share of input material by value sourced from micro and small enterprises"
+
+  - key: revenue
+    value: 30818400000
+    unit: INR
+    kind: money
+    as_filed: "3081.84"
+    filed_unit: crore
+    source: p46
+    note: "Revenue from operations, stated once on page 46 and not corroborated anywhere else in the document"
+
+  - key: undisputed_statutory_dues_over_6m
+    value: 0
+    unit: INR
+    kind: money
+    as_filed: "0"
+    filed_unit: unit
+    source: p89
+    note: "Auditor states no undisputed statutory dues in arrears over six months"

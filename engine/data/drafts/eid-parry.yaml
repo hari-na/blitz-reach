@@ -1,0 +1,66 @@
+company: eid-parry-fy2026
+fiscal_year: FY2026
+capture: parsed
+
+# Written by tools/extract.py from eid-parry-fy2026.pdf.
+# Page numbers are PDF pages, not printed pages. Every figure records the
+# number as printed and the scale declared on that same page, so the loader
+# re-checks the arithmetic and refuses the file if it does not reconcile.
+
+# Refused, and therefore absent rather than guessed:
+#   mse_interest_paid_during_year: the row was not found in this document
+#   mse_principal_outstanding: the row was not found in this document
+#   disputed_gst_dues: found the row on page 195 but no scale is declared on that page, and taking one from elsewhere in the document is how a hundredfold error happens (page 195)
+#   subsidiary_count: not stated in this document
+#   joint_venture_count: not stated in this document
+#   associate_count: not stated in this document
+#   undisputed_statutory_dues_over_6m: the auditor's six-month clause was not located, so this is untested rather than clean
+
+sources:
+  p59:
+    doc_type: annual_report
+    title: "eid-parry-fy2026 Annual Report"
+    year: FY2026
+    locator: "PDF page 59"
+  p175:
+    doc_type: annual_report
+    title: "eid-parry-fy2026 Annual Report"
+    year: FY2026
+    locator: "PDF page 175"
+  p242:
+    doc_type: annual_report
+    title: "eid-parry-fy2026 Annual Report"
+    year: FY2026
+    locator: "PDF page 242"
+
+signals:
+  - key: mse_interest_accrued_unpaid
+    value: 1700000
+    unit: INR
+    kind: money
+    as_filed: "17"
+    filed_unit: lakh
+    prior_value: 1200000
+    prior_as_filed: "12"
+    source: p242
+    note: "Interest accrued and remaining unpaid at the end of the year"
+
+  - key: msme_sourcing_share
+    value: 0.1644
+    unit: share
+    kind: ratio
+    as_filed: "16.44"
+    filed_unit: percent
+    prior_value: 0.216
+    prior_as_filed: "21.60"
+    source: p175
+    note: "Share of input material by value sourced from micro and small enterprises"
+
+  - key: revenue
+    value: 31202600000.000004
+    unit: INR
+    kind: money
+    as_filed: "3120.26"
+    filed_unit: crore
+    source: p59
+    note: "Revenue from operations, stated 2 times and agreeing, on pages 59, 77"

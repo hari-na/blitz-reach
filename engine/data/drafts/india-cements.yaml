@@ -1,0 +1,125 @@
+company: india-cements-fy2026
+fiscal_year: FY2026
+capture: parsed
+
+# Written by tools/extract.py from india-cements-fy2026.pdf.
+# Page numbers are PDF pages, not printed pages. Every figure records the
+# number as printed and the scale declared on that same page, so the loader
+# re-checks the arithmetic and refuses the file if it does not reconcile.
+
+# Refused, and therefore absent rather than guessed:
+#   joint_venture_count: not stated in this document
+#   associate_count: not stated in this document
+
+sources:
+  p17:
+    doc_type: annual_report
+    title: "india-cements-fy2026 Annual Report"
+    year: FY2026
+    locator: "PDF page 17"
+  p47:
+    doc_type: annual_report
+    title: "india-cements-fy2026 Annual Report"
+    year: FY2026
+    locator: "PDF page 47"
+  p83:
+    doc_type: annual_report
+    title: "india-cements-fy2026 Annual Report"
+    year: FY2026
+    locator: "PDF page 83"
+  p107:
+    doc_type: annual_report
+    title: "india-cements-fy2026 Annual Report"
+    year: FY2026
+    locator: "PDF page 107"
+  p149:
+    doc_type: annual_report
+    title: "india-cements-fy2026 Annual Report"
+    year: FY2026
+    locator: "PDF page 149"
+  p150:
+    doc_type: annual_report
+    title: "india-cements-fy2026 Annual Report"
+    year: FY2026
+    locator: "PDF page 150"
+
+signals:
+  - key: mse_interest_accrued_unpaid
+    value: 12334000
+    unit: INR
+    kind: money
+    as_filed: "123.34"
+    filed_unit: lakh
+    prior_value: 11081000
+    prior_as_filed: "110.81"
+    source: p150
+    note: "Interest accrued and remaining unpaid at the end of the year"
+
+  - key: mse_interest_paid_during_year
+    value: 14112000
+    unit: INR
+    kind: money
+    as_filed: "141.12"
+    filed_unit: lakh
+    prior_value: 33783000
+    prior_as_filed: "337.83"
+    source: p150
+    note: "Interest paid along with payments made beyond the appointed day"
+
+  - key: mse_principal_outstanding
+    value: 119585000.0
+    unit: INR
+    kind: money
+    as_filed: "1195.85"
+    filed_unit: lakh
+    prior_value: 71824000
+    prior_as_filed: "718.24"
+    source: p150
+    note: "Closing balance owed to micro and small enterprises, not an overdue figure"
+
+  - key: disputed_gst_dues
+    value: 1904808000.0
+    unit: INR
+    kind: money
+    as_filed: "19048.08"
+    filed_unit: lakh
+    source: p149
+    note: "Goods and Service Tax claims not acknowledged as debt"
+
+  - key: msme_sourcing_share
+    value: 0.17
+    unit: share
+    kind: ratio
+    as_filed: "17"
+    filed_unit: percent
+    prior_value: 0.0112
+    prior_as_filed: "1.12"
+    source: p83
+    note: "Share of input material by value sourced from micro and small enterprises"
+
+  - key: subsidiary_count
+    value: 4
+    unit: entities
+    kind: count
+    as_filed: "4"
+    filed_unit: unit
+    source: p47
+    note: "Subsidiaries consolidated, as stated in the directors' report"
+
+  - key: revenue
+    value: 44850000000
+    unit: INR
+    kind: money
+    as_filed: "4485"
+    filed_unit: crore
+    source: p17
+    note: "Revenue from operations, stated once on page 17 and not corroborated anywhere else in the document"
+
+  - key: undisputed_statutory_dues_over_6m
+    value: 0
+    unit: INR
+    kind: money
+    as_filed: "0"
+    filed_unit: unit
+    source: p107
+    note: "Auditor states no undisputed statutory dues in arrears over six months"

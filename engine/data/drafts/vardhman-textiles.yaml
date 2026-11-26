@@ -1,0 +1,72 @@
+company: vardhman-textiles-fy2026
+fiscal_year: FY2026
+capture: parsed
+
+# Written by tools/extract.py from vardhman-textiles-fy2026.pdf.
+# Page numbers are PDF pages, not printed pages. Every figure records the
+# number as printed and the scale declared on that same page, so the loader
+# re-checks the arithmetic and refuses the file if it does not reconcile.
+
+# Refused, and therefore absent rather than guessed:
+#   mse_interest_paid_during_year: the row was not found in this document
+#   mse_principal_outstanding: the row was not found in this document
+#   msme_sourcing_share: the row was not found in this document
+#   subsidiary_count: not stated in this document
+#   joint_venture_count: not stated in this document
+#   associate_count: not stated in this document
+
+sources:
+  p51:
+    doc_type: annual_report
+    title: "vardhman-textiles-fy2026 Annual Report"
+    year: FY2026
+    locator: "PDF page 51"
+  p73:
+    doc_type: annual_report
+    title: "vardhman-textiles-fy2026 Annual Report"
+    year: FY2026
+    locator: "PDF page 73"
+  p104:
+    doc_type: annual_report
+    title: "vardhman-textiles-fy2026 Annual Report"
+    year: FY2026
+    locator: "PDF page 104"
+
+signals:
+  - key: mse_interest_accrued_unpaid
+    value: 0
+    unit: INR
+    kind: money
+    as_filed: "0"
+    filed_unit: crore
+    prior_value: 0
+    prior_as_filed: "0"
+    source: p104
+    note: "Interest accrued and remaining unpaid at the end of the year"
+
+  - key: disputed_gst_dues
+    value: 13300000
+    unit: INR
+    kind: money
+    as_filed: "1.33"
+    filed_unit: crore
+    source: p73
+    note: "Goods and Service Tax claims not acknowledged as debt"
+
+  - key: revenue
+    value: 96523300000
+    unit: INR
+    kind: money
+    as_filed: "9652.33"
+    filed_unit: crore
+    source: p51
+    note: "Revenue from operations, stated once on page 51 and not corroborated anywhere else in the document"
+
+  - key: undisputed_statutory_dues_over_6m
+    value: 0
+    unit: INR
+    kind: money
+    as_filed: "0"
+    filed_unit: unit
+    source: p73
+    note: "Auditor states no undisputed statutory dues in arrears over six months"

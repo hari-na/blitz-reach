@@ -1,0 +1,98 @@
+company: suzlon-fy2026
+fiscal_year: FY2026
+capture: parsed
+
+# Written by tools/extract.py from suzlon-fy2026.pdf.
+# Page numbers are PDF pages, not printed pages. Every figure records the
+# number as printed and the scale declared on that same page, so the loader
+# re-checks the arithmetic and refuses the file if it does not reconcile.
+
+# Refused, and therefore absent rather than guessed:
+#   mse_interest_accrued_unpaid: found the row on page 333 but no scale is declared on that page, and taking one from elsewhere in the document is how a hundredfold error happens (page 333)
+#   mse_interest_paid_during_year: the row was not found in this document
+#   mse_principal_outstanding: found the row on page 333 but no scale is declared on that page, and taking one from elsewhere in the document is how a hundredfold error happens (page 333)
+#   joint_venture_count: not stated in this document
+
+sources:
+  p120:
+    doc_type: annual_report
+    title: "suzlon-fy2026 Annual Report"
+    year: FY2026
+    locator: "PDF page 120"
+  p127:
+    doc_type: annual_report
+    title: "suzlon-fy2026 Annual Report"
+    year: FY2026
+    locator: "PDF page 127"
+  p256:
+    doc_type: annual_report
+    title: "suzlon-fy2026 Annual Report"
+    year: FY2026
+    locator: "PDF page 256"
+  p280:
+    doc_type: annual_report
+    title: "suzlon-fy2026 Annual Report"
+    year: FY2026
+    locator: "PDF page 280"
+  p281:
+    doc_type: annual_report
+    title: "suzlon-fy2026 Annual Report"
+    year: FY2026
+    locator: "PDF page 281"
+
+signals:
+  - key: disputed_gst_dues
+    value: 9800000
+    unit: INR
+    kind: money
+    as_filed: "0.98"
+    filed_unit: crore
+    source: p281
+    note: "Goods and Service Tax claims not acknowledged as debt"
+
+  - key: msme_sourcing_share
+    value: 0.1989
+    unit: share
+    kind: ratio
+    as_filed: "19.89"
+    filed_unit: percent
+    prior_value: 0.1299
+    prior_as_filed: "12.99"
+    source: p256
+    note: "Share of input material by value sourced from micro and small enterprises"
+
+  - key: subsidiary_count
+    value: 43
+    unit: entities
+    kind: count
+    as_filed: "43"
+    filed_unit: unit
+    source: p127
+    note: "Subsidiaries consolidated, as stated in the directors' report"
+
+  - key: associate_count
+    value: 1
+    unit: entities
+    kind: count
+    as_filed: "1"
+    filed_unit: unit
+    source: p127
+    note: "Associates, as stated in the directors' report"
+
+  - key: revenue
+    value: 150535800000
+    unit: INR
+    kind: money
+    as_filed: "15053.58"
+    filed_unit: crore
+    source: p120
+    note: "Revenue from operations, stated once on page 120 and not corroborated anywhere else in the document"
+
+  - key: undisputed_statutory_dues_over_6m
+    value: 0
+    unit: INR
+    kind: money
+    as_filed: "0"
+    filed_unit: unit
+    source: p280
+    note: "Auditor states no undisputed statutory dues in arrears over six months"

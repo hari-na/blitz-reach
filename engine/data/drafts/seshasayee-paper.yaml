@@ -1,0 +1,99 @@
+company: seshasayee-paper-fy2026
+fiscal_year: FY2026
+capture: parsed
+
+# Written by tools/extract.py from seshasayee-paper-fy2026.pdf.
+# Page numbers are PDF pages, not printed pages. Every figure records the
+# number as printed and the scale declared on that same page, so the loader
+# re-checks the arithmetic and refuses the file if it does not reconcile.
+
+# Refused, and therefore absent rather than guessed:
+#   disputed_gst_dues: the row was not found in this document
+#   subsidiary_count: not stated in this document
+#   joint_venture_count: not stated in this document
+#   associate_count: not stated in this document
+
+sources:
+  p39:
+    doc_type: annual_report
+    title: "seshasayee-paper-fy2026 Annual Report"
+    year: FY2026
+    locator: "PDF page 39"
+  p144:
+    doc_type: annual_report
+    title: "seshasayee-paper-fy2026 Annual Report"
+    year: FY2026
+    locator: "PDF page 144"
+  p180:
+    doc_type: annual_report
+    title: "seshasayee-paper-fy2026 Annual Report"
+    year: FY2026
+    locator: "PDF page 180"
+  p219:
+    doc_type: annual_report
+    title: "seshasayee-paper-fy2026 Annual Report"
+    year: FY2026
+    locator: "PDF page 219"
+
+signals:
+  - key: mse_interest_accrued_unpaid
+    value: 0
+    unit: INR
+    kind: money
+    as_filed: "0"
+    filed_unit: crore
+    prior_value: 0
+    prior_as_filed: "0"
+    source: p219
+    note: "Interest accrued and remaining unpaid at the end of the year"
+
+  - key: mse_interest_paid_during_year
+    value: 0
+    unit: INR
+    kind: money
+    as_filed: "0"
+    filed_unit: crore
+    prior_value: 0
+    prior_as_filed: "0"
+    source: p219
+    note: "Interest paid along with payments made beyond the appointed day"
+
+  - key: mse_principal_outstanding
+    value: 409300000
+    unit: INR
+    kind: money
+    as_filed: "40.93"
+    filed_unit: crore
+    prior_value: 481800000
+    prior_as_filed: "48.18"
+    source: p219
+    note: "Closing balance owed to micro and small enterprises, not an overdue figure"
+
+  - key: msme_sourcing_share
+    value: 0.59
+    unit: share
+    kind: ratio
+    as_filed: "59"
+    filed_unit: percent
+    prior_value: 0.51
+    prior_as_filed: "51"
+    source: p144
+    note: "Share of input material by value sourced from micro and small enterprises"
+
+  - key: revenue
+    value: 17101700000
+    unit: INR
+    kind: money
+    as_filed: "1710.17"
+    filed_unit: crore
+    source: p39
+    note: "Revenue from operations, stated 3 times and agreeing, on pages 39, 64"
+
+  - key: undisputed_statutory_dues_over_6m
+    value: 0
+    unit: INR
+    kind: money
+    as_filed: "0"
+    filed_unit: unit
+    source: p180
+    note: "Auditor states no undisputed statutory dues in arrears over six months"
