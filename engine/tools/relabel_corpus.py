@@ -23,6 +23,7 @@ mistake made here.
 from __future__ import annotations
 
 import argparse
+import csv
 import json
 import re
 import sys
@@ -63,10 +64,94 @@ def fetched_rows() -> list[dict]:
     return out
 
 
+def reconcile(dry_run: bool) -> int:
+    """Make the filenames on disk agree with the manifest, by company id.
+
+    The manifest recomputes each slug from the stored company name, so a later
+    fix to the naming rule moves a row's slug. A file named under the older
+    rule then looks like a company the manifest has never heard of, and the
+    fetcher, which decides what to skip by filename, downloads it again. 266
+    files drifted this way after the entity fix, which is about 3 GB of BSE's
+    bandwidth spent re-fetching reports already sitting on this disk.
+
+    Identity here is the company id, not the name, so this walks every file
+    whose stem is not a manifest slug, looks up what it was fetched for, and
+    renames it to whatever the manifest calls that company now.
+    """
+    manifest = ROOT / "manifest.csv"
+    if not manifest.exists():
+        print("no manifest to reconcile against")
+        return 1
+
+    want: dict[str, str] = {}
+    slugs: set[str] = set()
+    with manifest.open(encoding="utf-8", newline="") as fh:
+        for row in csv.DictReader(fh):
+            want[str(row["scrip"])] = row["slug"]
+            slugs.add(row["slug"])
+
+    # Which company each file on disk was fetched for. A relabel already moved
+    # some of them, so that ledger is read after the download one.
+    owner: dict[str, str] = {}
+    for r in fetched_rows():
+        if r.get("slug") and r.get("scrip") is not None:
+            owner[r["slug"]] = str(r["scrip"])
+    if RENAMES.exists():
+        for line in RENAMES.read_text(encoding="utf-8", errors="replace").splitlines():
+            try:
+                r = json.loads(line)
+            except ValueError:
+                continue
+            owner[r["to"]] = str(r.get("scrip", ""))
+
+    taken = {p.stem for p in PDF_DIR.glob("*.pdf")}
+    moved = unknown = collided = 0
+
+    for p in sorted(PDF_DIR.glob("*.pdf")):
+        if p.stem in slugs:
+            continue
+        cid = owner.get(p.stem)
+        target = want.get(cid or "")
+        if not target:
+            unknown += 1
+            continue
+        if target in taken:
+            # Another file already holds that name. Leave both rather than
+            # overwrite a report with a different one.
+            collided += 1
+            continue
+        print("  {a}  ->  {b}".format(a=p.stem, b=target))
+        if not dry_run:
+            p.replace(PDF_DIR / "{s}.pdf".format(s=target))
+            taken.discard(p.stem)
+            taken.add(target)
+        moved += 1
+
+    print()
+    print(
+        "{v}{m} realigned, {u} not traceable to a company, {c} name already held".format(
+            v="would realign: " if dry_run else "", m=moved, u=unknown, c=collided
+        )
+    )
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument(
+        "--reconcile",
+        action="store_true",
+        help="rename files so they match the manifest's current slugs",
+    )
     args = ap.parse_args(argv)
+
+    if args.reconcile:
+        try:
+            sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+        except (AttributeError, ValueError):
+            pass
+        return reconcile(args.dry_run)
 
     try:
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")

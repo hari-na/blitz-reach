@@ -162,11 +162,15 @@ def show_status() -> int:
     print("corpus fetch  -  {st}".format(st=s.get("state", "?")))
     print("  started       {v}".format(v=s.get("started")))
     print("  updated       {v}".format(v=s.get("updated")))
+    # "done of to_fetch", not "done of manifest": a second pass over a grown
+    # manifest skips most of it, and counting progress against the whole file
+    # reads as 1 of 3889 when the run has 1230 to do.
     print(
         "  progress      {d} of {t}  ({p:.1f}%)".format(
-            d=s.get("done", 0), t=s.get("total", 0), p=s.get("percent", 0.0)
+            d=s.get("done", 0), t=s.get("to_fetch", s.get("total", 0)), p=s.get("percent", 0.0)
         )
     )
+    print("  manifest      {t} rows".format(t=s.get("total", 0)))
     print(
         "  ok {ok}   skipped {sk}   failed {f}".format(
             ok=s.get("ok", 0), sk=s.get("skipped", 0), f=s.get("failed", 0)
