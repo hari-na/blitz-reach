@@ -37,6 +37,7 @@ so an interrupted run costs only what it had not reached.
 from __future__ import annotations
 
 import argparse
+import html as html_mod
 import json
 import re
 import subprocess
@@ -68,6 +69,18 @@ LINK = re.compile(
 )
 NAME = re.compile(r"<h1[^>]*>\s*(.*?)\s*</h1>", re.S)
 MIN_PAGE_BYTES = 2000
+
+# screener answers a throttled request with a page whose heading reads "Too
+# many requests". The first run paced at 0.8s, tripped this on 2,419 of 4,929
+# companies, and recorded every one of them as a company by that name. The
+# links on those pages were still correct for the right company - 21 of 21
+# numeric ids matched the scrip embedded in the URL they gave - so no figure
+# was mis-attributed, but 1,255 companies lost their reports section and were
+# written down as having no report, which is a false negative dressed as a
+# finding. A throttled page is now never a result: it is retried with backoff
+# and, if it will not clear, recorded as retryable so a later pass picks it up.
+THROTTLED = re.compile(r"too\s+many\s+requests", re.I)
+BACKOFF_SECONDS = (20, 45, 90, 180)
 
 
 def log(msg: str) -> None:
@@ -132,30 +145,67 @@ def load_universe() -> list[str]:
     return refresh_sitemaps()
 
 
-def done_ids() -> set[str]:
+def ledger_records() -> dict[str, dict]:
+    """Latest record per company id. A repair pass supersedes an earlier one."""
+    out: dict[str, dict] = {}
     if not LEDGER.exists():
-        return set()
-    out: set[str] = set()
+        return out
     for line in LEDGER.read_text(encoding="utf-8", errors="replace").splitlines():
         try:
-            out.add(json.loads(line)["id"])
+            r = json.loads(line)
+            out[r["id"]] = r
         except (ValueError, KeyError):
             continue
     return out
 
 
+def done_ids() -> set[str]:
+    return {k for k, r in ledger_records().items() if not r.get("retryable")}
+
+
+def throttled_ids() -> list[str]:
+    """Companies whose record came from a rate-limit page, in sitemap order."""
+    recs = ledger_records()
+    out = []
+    for cid, r in recs.items():
+        name = (r.get("name") or "")
+        if r.get("retryable") or THROTTLED.search(name):
+            out.append(cid)
+    return out
+
+
+def clean_name(text: str) -> str:
+    """A company name as a person would read it, tags and entities resolved."""
+    s = re.sub(r"<[^>]+>", "", text or "")
+    # Screener serves names HTML-escaped, so "India Sugars &amp; Refineries"
+    # arrives with the entity intact. Left alone it slugs to "...-amp-...",
+    # a filename nobody can match back to a company. Twice, because a few
+    # names arrive double-escaped as "&amp;amp;".
+    s = html_mod.unescape(html_mod.unescape(s))
+    return re.sub(r"\s+", " ", s).strip()
+
+
 def slugify(text: str, fallback: str) -> str:
-    s = re.sub(r"<[^>]+>", "", text or "").strip().lower()
+    s = clean_name(text).lower()
     s = re.sub(r"\b(limited|ltd|private|pvt|the)\b", " ", s)
+    s = s.replace("&", " and ")
     s = re.sub(r"[^a-z0-9]+", "-", s).strip("-")
-    return s[:60] or fallback.lower()
+    s = re.sub(r"-and$", "", s)
+    return s[:60].strip("-") or fallback.lower()
+
+
+def is_throttled(html: str) -> bool:
+    """True when this is screener's rate-limit page rather than a company."""
+    head = html[:4000]
+    m = NAME.search(head)
+    if m is not None and THROTTLED.search(re.sub(r"<[^>]+>", "", m.group(1))):
+        return True
+    return bool(THROTTLED.search(head)) and "annual-reports" not in html
 
 
 def parse(html: str, cid: str) -> dict:
     name_m = NAME.search(html)
-    name = ""
-    if name_m is not None:
-        name = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", "", name_m.group(1))).strip()
+    name = clean_name(name_m.group(1)) if name_m is not None else ""
 
     blk = BLOCK.search(html)
     if blk is None:
@@ -185,20 +235,22 @@ def write_manifest() -> tuple[int, int]:
     bad = 0
     seen_slug: dict[str, int] = {}
 
-    if LEDGER.exists():
-        for line in LEDGER.read_text(encoding="utf-8", errors="replace").splitlines():
-            try:
-                r = json.loads(line)
-            except ValueError:
-                continue
-            if not r.get("ok"):
-                bad += 1
-                continue
-            slug = r["slug"]
-            seen_slug[slug] = seen_slug.get(slug, 0) + 1
-            if seen_slug[slug] > 1:
-                slug = "{s}-{n}".format(s=slug, n=seen_slug[slug])
-            rows.append((slug, r["id"], r["url"], r.get("year", ""), r.get("name", "")))
+    for r in ledger_records().values():
+        if not r.get("ok"):
+            bad += 1
+            continue
+        url = r["url"]
+        # A few links are http. The fetcher refuses anything but https, and
+        # these same hosts serve https, so upgrade rather than drop 34 reports.
+        if url.startswith("http://") and re.match(
+            r"http://(www\.)?(bseindia|nseindia)\.com/", url
+        ):
+            url = "https://" + url[len("http://") :]
+        slug = slugify(r.get("name") or "", r["id"])
+        seen_slug[slug] = seen_slug.get(slug, 0) + 1
+        if seen_slug[slug] > 1:
+            slug = "{s}-{n}".format(s=slug, n=seen_slug[slug])
+        rows.append((slug, r["id"], url, r.get("year", ""), clean_name(r.get("name", ""))))
 
     MANIFEST.parent.mkdir(parents=True, exist_ok=True)
     lines = ["slug,scrip,url,year,company"]
@@ -238,11 +290,16 @@ def show_status() -> int:
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--hours", type=float, default=2.5, help="wall-clock budget")
-    ap.add_argument("--min-delay", type=float, default=0.8, help="floor between requests")
+    ap.add_argument("--min-delay", type=float, default=2.0, help="floor between requests")
     ap.add_argument("--limit", type=int, default=0, help="stop after N (trial run)")
     ap.add_argument("--sitemap", action="store_true", help="refresh the company list and exit")
     ap.add_argument("--status", action="store_true", help="print progress and exit")
     ap.add_argument("--manifest-only", action="store_true", help="rebuild the CSV from the ledger")
+    ap.add_argument(
+        "--redo-throttled",
+        action="store_true",
+        help="re-walk only the companies whose record came from a rate-limit page",
+    )
     args = ap.parse_args(argv)
 
     try:
@@ -264,8 +321,13 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     universe = load_universe()
-    already = done_ids()
-    todo = [c for c in universe if c not in already]
+    if args.redo_throttled:
+        order = {c: i for i, c in enumerate(universe)}
+        todo = sorted(throttled_ids(), key=lambda c: order.get(c, 10**9))
+        already = set()
+    else:
+        already = done_ids()
+        todo = [c for c in universe if c not in already]
     if args.limit:
         todo = todo[: args.limit]
     if not todo:
@@ -283,7 +345,8 @@ def main(argv: list[str] | None = None) -> int:
         )
     )
 
-    found = none = failed = 0
+    found = none = failed = throttles = 0
+    retryable = 0
     last_error = ""
     t0 = time.monotonic()
 
@@ -293,11 +356,29 @@ def main(argv: list[str] | None = None) -> int:
         if wait > 0:
             time.sleep(wait)
 
-        html = get("https://www.screener.in/company/{c}/".format(c=cid))
-        if html is None or len(html) < MIN_PAGE_BYTES:
-            rec: dict = {"id": cid, "ok": False, "why": "fetch failed or page too small"}
-        else:
+        rec: dict | None = None
+        for attempt, pause in enumerate((0,) + BACKOFF_SECONDS):
+            if pause:
+                log("throttled on {c}, backing off {p}s".format(c=cid, p=pause))
+                time.sleep(pause)
+            html = get("https://www.screener.in/company/{c}/".format(c=cid))
+            if html is None or len(html) < MIN_PAGE_BYTES:
+                rec = {"id": cid, "ok": False, "why": "fetch failed or page too small"}
+                break
+            if is_throttled(html):
+                throttles += 1
+                rec = None
+                continue
             rec = parse(html, cid)
+            break
+        if rec is None:
+            # Still throttled after every backoff. Recorded so the walk can go
+            # on, flagged so a later pass redoes it, and never counted as a
+            # company that has no report.
+            rec = {
+                "id": cid, "ok": False, "retryable": True,
+                "why": "rate limited after {n} attempts".format(n=len(BACKOFF_SECONDS) + 1),
+            }
 
         rec["seen"] = datetime.now(timezone.utc).isoformat()
         with LEDGER.open("a", encoding="utf-8") as fh:
@@ -312,6 +393,10 @@ def main(argv: list[str] | None = None) -> int:
                     n=(rec.get("name") or "")[:42],
                 )
             )
+        elif rec.get("retryable"):
+            retryable += 1
+            last_error = "{c}: {w}".format(c=cid, w=rec["why"])
+            log("RETRY {i}/{t} {c} {w}".format(i=i, t=len(todo), c=cid, w=rec["why"]))
         elif "fetch failed" in rec.get("why", ""):
             failed += 1
             last_error = "{c}: {w}".format(c=cid, w=rec["why"])
@@ -339,6 +424,8 @@ def main(argv: list[str] | None = None) -> int:
                     "found": found,
                     "no_report": none,
                     "failed": failed,
+                    "retryable": retryable,
+                    "throttle_hits": throttles,
                     "per_min": round(i / (elapsed / 60), 2) if elapsed else 0.0,
                     "elapsed": str(timedelta(seconds=int(elapsed))),
                     "projected_finish": eta.isoformat(timespec="seconds"),
@@ -354,8 +441,9 @@ def main(argv: list[str] | None = None) -> int:
 
     rows, bad = write_manifest()
     log(
-        "discovery end: {f} found, {n} list no report, {e} failed. manifest {r} rows".format(
-            f=found, n=none, e=failed, r=rows
+        "discovery end: {f} found, {n} list no report, {e} failed, {y} rate limited "
+        "({h} throttle hits). manifest {r} rows".format(
+            f=found, n=none, e=failed, y=retryable, h=throttles, r=rows
         )
     )
     st = json.loads(STATUS_FILE.read_text(encoding="utf-8"))
@@ -363,8 +451,9 @@ def main(argv: list[str] | None = None) -> int:
     st["manifest_rows"] = rows
     STATUS_FILE.write_text(json.dumps(st, indent=2), encoding="utf-8")
     print(
-        "done: {f} found, {n} no report, {e} failed. manifest: {r} rows at {m}".format(
-            f=found, n=none, e=failed, r=rows, m=MANIFEST
+        "done: {f} found, {n} no report, {e} failed, {y} rate limited. "
+        "manifest: {r} rows at {m}".format(
+            f=found, n=none, e=failed, y=retryable, r=rows, m=MANIFEST
         )
     )
     return 0
