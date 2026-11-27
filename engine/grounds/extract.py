@@ -31,7 +31,21 @@ NUMERIC = re.compile(r"^\s*\(?\s*([\d][\d,]*\.?\d*)\s*\)?\s*%?\s*(?:approx\.?)?\
 # backtick in India Cements, "C" and "D" in LMW. Anchoring on the symbol finds
 # nothing; anchoring on the word and then looking backwards works.
 UNIT_WORD = re.compile(r"\b(lakhs?|crores?|millions?|thousands?)\b", re.I)
-UNIT_CUE = re.compile(r"(\bin\b|\bRs\.?|[`₹ ]|\b[A-Z]\b)\s*$")
+# What must sit immediately before a scale word for it to declare this page's
+# units, rather than just be a figure in running prose.
+#
+# Case-insensitive, and that is not cosmetic. Without re.I the in-branch never
+# matched a capitalised "In", so "(Rs. In Lakhs)" - an ordinary header - was
+# read as declaring no scale at all. Across 60 downloaded reports the revenue
+# figure was present and refused 43 times, and this was the larger half of the
+# reason. The ten reports read by hand all happened to write "in lakhs" in
+# lower case, so the graded exam could never have caught it.
+#
+# A currency token may also sit between the cue and the scale word, as in
+# "(All Amounts in INR Lakhs unless otherwise stated)".
+UNIT_CUE = re.compile(
+    r"(\bin\b|\bRs\.?|[`₹ ]|\b[A-Z]\b)\s*(?:INR|Rs\.?|[`₹])?\s*$", re.I
+)
 
 FY_PATTERNS = (
     re.compile(r"year\s+ended\s+(?:on\s+)?31(?:st)?\s+March,?\s+(\d{4})", re.I),
