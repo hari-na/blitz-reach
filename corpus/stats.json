@@ -1,0 +1,55 @@
+{
+  "reports": 40,
+  "seconds": 19.4,
+  "unreadable": 0,
+  "nothing_captured": 11,
+  "fiscal_years": {
+    "FY2026": 30,
+    "?": 3,
+    "FY2021": 2,
+    "FY2020": 2,
+    "FY2024": 1,
+    "FY2037": 1,
+    "FY2017": 1
+  },
+  "present": {
+    "revenue": 15,
+    "mse_interest_accrued_unpaid": 6,
+    "mse_interest_paid_during_year": 4,
+    "mse_principal_outstanding": 6,
+    "msme_sourcing_share": 4,
+    "undisputed_statutory_dues_over_6m": 20,
+    "disputed_gst_dues": 2,
+    "associate_count": 1,
+    "joint_venture_count": 1
+  },
+  "nonzero": {
+    "revenue": 15,
+    "mse_interest_accrued_unpaid": 3,
+    "mse_interest_paid_during_year": 2,
+    "mse_principal_outstanding": 6,
+    "msme_sourcing_share": 4,
+    "disputed_gst_dues": 2,
+    "associate_count": 1,
+    "joint_venture_count": 1
+  },
+  "filed_zero": {
+    "undisputed_statutory_dues_over_6m": 20,
+    "mse_interest_accrued_unpaid": 3,
+    "mse_interest_paid_during_year": 2
+  },
+  "refusals": {
+    "subsidiary_count": 40,
+    "related_party_trade_value": 40,
+    "kam_related_party": 40,
+    "joint_venture_count": 39,
+    "associate_count": 39,
+    "disputed_gst_dues": 38,
+    "mse_interest_paid_during_year": 36,
+    "msme_sourcing_share": 36,
+    "mse_interest_accrued_unpaid": 34,
+    "mse_principal_outstanding": 34,
+    "revenue": 25,
+    "undisputed_statutory_dues_over_6m": 20
+  }
+}
